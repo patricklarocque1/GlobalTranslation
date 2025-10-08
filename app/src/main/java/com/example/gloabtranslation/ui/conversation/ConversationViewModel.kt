@@ -142,7 +142,7 @@ class ConversationViewModel @Inject constructor(
                     onFailure = { exception ->
                         _uiState.value = _uiState.value.copy(
                             isTranslating = false,
-                            error = "Translation failed: ${exception.message}"
+                            error = "Translation failed: ${exception.message}. Ensure models are downloaded and you're on WiFi for first-time downloads."
                         )
                     }
                 )
@@ -242,17 +242,17 @@ class ConversationViewModel @Inject constructor(
     private fun getLocaleFromLanguageCode(languageCode: String): Locale {
         return when (languageCode) {
             TranslateLanguage.ENGLISH -> Locale.ENGLISH
-            TranslateLanguage.SPANISH -> Locale("es")
+            TranslateLanguage.SPANISH -> Locale.forLanguageTag("es")
             TranslateLanguage.FRENCH -> Locale.FRENCH
             TranslateLanguage.GERMAN -> Locale.GERMAN
             TranslateLanguage.ITALIAN -> Locale.ITALIAN
-            TranslateLanguage.PORTUGUESE -> Locale("pt")
+            TranslateLanguage.PORTUGUESE -> Locale.forLanguageTag("pt")
             TranslateLanguage.CHINESE -> Locale.CHINESE
             TranslateLanguage.JAPANESE -> Locale.JAPANESE
             TranslateLanguage.KOREAN -> Locale.KOREAN
-            TranslateLanguage.RUSSIAN -> Locale("ru")
-            TranslateLanguage.ARABIC -> Locale("ar")
-            TranslateLanguage.HINDI -> Locale("hi")
+            TranslateLanguage.RUSSIAN -> Locale.forLanguageTag("ru")
+            TranslateLanguage.ARABIC -> Locale.forLanguageTag("ar")
+            TranslateLanguage.HINDI -> Locale.forLanguageTag("hi")
             else -> Locale.getDefault()
         }
     }

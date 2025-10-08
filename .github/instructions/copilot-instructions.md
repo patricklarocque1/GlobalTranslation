@@ -58,15 +58,40 @@ All features have been successfully implemented:
 
 #### ML Kit Integration
 ```kotlin
-// Translation service pattern (implement in services/)
+// Translation service pattern (implemented in services/)
+@Singleton
 class TranslationService @Inject constructor() {
+    
+    // Translates text, auto-downloads models on WiFi if needed
     suspend fun translate(
         text: String, 
-        from: TranslateLanguage, 
-        to: TranslateLanguage
+        from: String, 
+        to: String
     ): Result<String>
+    
+    // CRITICAL: Checks actual download status without triggering downloads
+    // Uses RemoteModelManager.getInstance() to check model availability
+    suspend fun areModelsDownloaded(
+        fromLanguage: String,
+        toLanguage: String
+    ): Boolean
+    
+    // Explicitly downloads models (requires WiFi)
+    suspend fun downloadModels(
+        fromLanguage: String,
+        toLanguage: String
+    ): Result<Unit>
 }
 ```
+
+**ML Kit Translation Best Practices:**
+- ✅ **Model Checking**: Use `areModelsDownloaded()` to check status without downloading
+- ✅ **WiFi Requirement**: First-time downloads require WiFi connection
+- ✅ **Auto-Download**: `translate()` automatically downloads models if missing (on WiFi)
+- ✅ **Error Messages**: Include guidance about WiFi and model downloads
+- ❌ **DON'T**: Check models by attempting translation (triggers download)
+- ❌ **DON'T**: Assume models are available without checking
+- ❌ **DON'T**: Forget to handle cellular network errors
 
 #### Speech Recognition Alternative
 - **Do NOT use** ML Kit speech - use Android's built-in `SpeechRecognizer`
@@ -179,9 +204,12 @@ data class ConversationUiState(
       sourceCompatibility = JavaVersion.VERSION_11
       targetCompatibility = JavaVersion.VERSION_11
   }
-  kotlinOptions {
-      jvmTarget = "11"
+  kotlin {
+      compilerOptions {
+          jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+      }
   }
+  // Note: kotlinOptions is deprecated, use kotlin.compilerOptions instead
   ```
 
 ### File Organization

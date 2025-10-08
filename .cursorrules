@@ -31,9 +31,12 @@ compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
-kotlinOptions {
-    jvmTarget = "11"  // MUST match compileOptions
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
 }
+// Note: Old kotlinOptions { jvmTarget = "11" } is deprecated
 ```
 
 ### 3. KSP Version Format (IMPORTANT)
@@ -284,6 +287,7 @@ NavigationSuiteScaffold(
 class TranslationService @Inject constructor() {
     private val activeTranslators = mutableMapOf<String, Translator>()
     
+    // Translates text, auto-downloads models if needed (requires WiFi)
     suspend fun translate(
         text: String,
         fromLanguage: String,
@@ -291,11 +295,28 @@ class TranslationService @Inject constructor() {
     ): Result<String> {
         return try {
             val translator = getOrCreateTranslator(fromLanguage, toLanguage)
-            ensureModelDownloaded(translator)
+            ensureModelDownloaded(translator)  // Downloads if needed
             val result = translator.translate(text).await()
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    // IMPORTANT: Checks actual download status without triggering downloads
+    suspend fun areModelsDownloaded(
+        fromLanguage: String,
+        toLanguage: String
+    ): Boolean {
+        return try {
+            val modelManager = RemoteModelManager.getInstance()
+            val fromModel = TranslateRemoteModel.Builder(fromLanguage).build()
+            val toModel = TranslateRemoteModel.Builder(toLanguage).build()
+            val fromDownloaded = modelManager.isModelDownloaded(fromModel).await()
+            val toDownloaded = modelManager.isModelDownloaded(toModel).await()
+            fromDownloaded && toDownloaded
+        } catch (e: Exception) {
+            false
         }
     }
     
@@ -305,6 +326,19 @@ class TranslationService @Inject constructor() {
     }
 }
 ```
+
+### Critical ML Kit Behaviors
+
+**Model Download Requirements:**
+- First-time downloads **require WiFi** (enforced by `DownloadConditions`)
+- `translate()` auto-downloads models if not present
+- `areModelsDownloaded()` checks status without downloading
+- Languages screen uses `areModelsDownloaded()` for accurate status
+
+**Error Handling:**
+- Translation fails on cellular if models not downloaded
+- Error messages should guide users to WiFi and Languages screen
+- Always check download status before attempting translation on cellular
 
 ## Testing Patterns (For Future Implementation)
 

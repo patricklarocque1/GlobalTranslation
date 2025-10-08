@@ -52,17 +52,22 @@ class TranslationService @Inject constructor() {
     
     /**
      * Checks if translation models are downloaded for the given language pair.
+     * NOTE: This properly checks model download status using the RemoteModelManager.
      */
     suspend fun areModelsDownloaded(
         fromLanguage: String,
         toLanguage: String
     ): Boolean {
         return try {
-            val translator = getOrCreateTranslator(fromLanguage, toLanguage)
+            val modelManager = com.google.mlkit.common.model.RemoteModelManager.getInstance()
             
-            // This will throw if models aren't downloaded
-            translator.translate("test").await()
-            true
+            val fromModel = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(fromLanguage).build()
+            val toModel = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(toLanguage).build()
+            
+            val fromDownloaded = modelManager.isModelDownloaded(fromModel).await()
+            val toDownloaded = modelManager.isModelDownloaded(toModel).await()
+            
+            fromDownloaded && toDownloaded
         } catch (e: Exception) {
             false
         }

@@ -76,7 +76,7 @@ class TextInputViewModel @Inject constructor(
                     onFailure = { exception ->
                         _uiState.value = currentState.copy(
                             isTranslating = false,
-                            error = "Translation failed: ${exception.message}"
+                            error = "Translation failed: ${exception.message}. Ensure models are downloaded and you're on WiFi for first-time downloads."
                         )
                     }
                 )

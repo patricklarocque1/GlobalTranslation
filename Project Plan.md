@@ -264,3 +264,31 @@ While the app is production-ready, these enhancements could be considered:
    - Measure app performance metrics
 
 **Note:** These are enhancements, not bugs or missing features. The current implementation follows best practices and is fully functional.
+
+## 🐛 Bug Fixes Applied
+
+### Model Download Status Inconsistency ✅ FIXED
+
+**Issue Discovered**: Languages screen showed incorrect download status because it attempted translation to check if models exist, which would auto-download models instead of checking actual download status.
+
+**Impact**:
+- Languages screen showed "not downloaded" even when models were available
+- Confusing UX when translations succeeded but status showed unavailable
+- No clear warning about WiFi requirement for first-time downloads
+
+**Fix Applied**:
+- Changed `areModelsDownloaded()` to use `RemoteModelManager.getInstance()`
+- Now properly checks model download status without triggering downloads
+- Added clear error messages mentioning WiFi requirement
+- Languages screen now shows accurate download status
+
+**Files Modified**:
+- `TranslationService.kt` - Fixed `areModelsDownloaded()` method
+- `ConversationViewModel.kt` - Enhanced error message with WiFi guidance
+- `TextInputViewModel.kt` - Enhanced error message with WiFi guidance
+
+**Testing**:
+- ✅ Languages screen shows accurate download status
+- ✅ Translation auto-downloads models on WiFi when needed
+- ✅ Clear error on cellular without models
+- ✅ No false positives in download status

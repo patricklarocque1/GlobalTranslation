@@ -20,7 +20,7 @@ import kotlin.coroutines.resume
  */
 @Singleton
 class TextToSpeechService @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     
     private var textToSpeech: TextToSpeech? = null

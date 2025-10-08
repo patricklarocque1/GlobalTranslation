@@ -238,6 +238,14 @@ Watch for these common issues:
 - ✅ Verify Hilt configuration
 - ✅ Confirm pattern consistency
 
+### ML Kit Translation Specific:
+
+- ✅ Use `RemoteModelManager.getInstance()` to check download status
+- ✅ Never check models by attempting translation (triggers download)
+- ✅ Always mention WiFi requirement in error messages
+- ✅ Remember: First-time downloads require WiFi connection
+- ✅ `translate()` auto-downloads, `areModelsDownloaded()` only checks
+
 ### Red Flags to Stop and Investigate:
 
 - 🚨 Import errors after changes

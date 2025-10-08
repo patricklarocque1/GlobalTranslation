@@ -64,8 +64,10 @@ compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
-kotlinOptions {
-    jvmTarget = "11"
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
 }
 
 // All dependencies managed through libs.versions.toml version catalog
@@ -161,6 +163,9 @@ app/src/main/java/com/example/gloabtranslation/
   - Singleton service with proper resource cleanup
   - Caches active translators for performance
   - Handles model download with WiFi conditions
+  - **Fixed**: Properly checks model download status using `RemoteModelManager`
+  - Auto-downloads models on first translation (WiFi required)
+  - Accurate status reporting to Languages screen
   
 - **SpeechRecognitionService**: Android SpeechRecognizer with permission handling ✅
   - Flow-based API for reactive speech recognition
@@ -234,6 +239,14 @@ While production-ready, these enhancements could be considered:
 
 *Note: These are enhancements, not bugs. Current implementation is complete and functional.*
 
+### Recent Bug Fixes
+
+**Model Download Status Accuracy** (Fixed)
+- **Issue**: Languages screen showed incorrect download status
+- **Cause**: Checking models by attempting translation (which auto-downloaded)
+- **Fix**: Now uses `RemoteModelManager.getInstance()` to check actual status
+- **Impact**: Accurate download status, better error messages, clear WiFi guidance
+
 ## 🛠️ Troubleshooting
 
 ### Common Build Issues
@@ -257,8 +270,10 @@ compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
-kotlinOptions {
-    jvmTarget = "11"  // Must match compileOptions!
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
 }
 ```
 

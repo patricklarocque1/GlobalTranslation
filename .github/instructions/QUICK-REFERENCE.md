@@ -14,9 +14,12 @@ compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
-kotlinOptions {
-    jvmTarget = "11"  // MUST MATCH!
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
 }
+// Note: Old kotlinOptions is deprecated
 
 // Required Plugins (app/build.gradle.kts)
 plugins {
@@ -172,7 +175,14 @@ val uiState: LiveData<MyUiState>  // Use StateFlow
 
 // ❌ DON'T mismatch JVM targets
 compileOptions { targetCompatibility = VERSION_11 }
-kotlinOptions { jvmTarget = "17" }  // Mismatch! Both must be 11
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)  // Mismatch! Must be JVM_11
+    }
+}
+
+// ❌ DON'T use deprecated kotlinOptions
+kotlinOptions { jvmTarget = "11" }  // Deprecated! Use compilerOptions
 
 // ❌ DON'T use wrong KSP version
 ksp = "2.2.20-1.0.20"  // Wrong! Should be 2.0.x
@@ -293,6 +303,31 @@ data class MyUiState(
 - **3 Screens**: Conversation, Text Input, Languages
 - **3 ViewModels**: All use StateFlow pattern
 - **4 Services**: All use Hilt @Singleton
+
+## 🔍 ML Kit Translation Gotchas
+
+```kotlin
+// ✅ CORRECT: Check download status without downloading
+suspend fun areModelsDownloaded(from: String, to: String): Boolean {
+    val modelManager = RemoteModelManager.getInstance()
+    val fromModel = TranslateRemoteModel.Builder(from).build()
+    val toModel = TranslateRemoteModel.Builder(to).build()
+    return modelManager.isModelDownloaded(fromModel).await() &&
+           modelManager.isModelDownloaded(toModel).await()
+}
+
+// ❌ WRONG: Checking by attempting translation
+suspend fun areModelsDownloaded(from: String, to: String): Boolean {
+    translator.translate("test").await()  // This downloads models!
+    return true
+}
+```
+
+**Critical ML Kit Behaviors:**
+- First-time downloads **require WiFi** (enforced by DownloadConditions)
+- `translate()` auto-downloads models if missing
+- Check status with `RemoteModelManager.getInstance()`
+- Error messages should mention WiFi requirement
 
 ---
 
