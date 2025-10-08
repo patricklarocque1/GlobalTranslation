@@ -9,15 +9,14 @@ Android translation app using Jetpack Compose, currently in early development st
 
 ## Critical Build Setup (MUST READ FIRST)
 
-### AGP 9.0 + Hilt Compatibility Issue
-- **CRITICAL**: Project uses AGP 9.0.0-alpha09 which breaks Hilt plugin compatibility
-- **Required workaround**: `android.newDsl=false` in `gradle.properties` (already set)
-- **Do NOT remove** the `kotlin.android` plugin from version catalog - it's removed from build files but needed in catalog
+### Stable Build Configuration
+- **AGP Version**: Uses stable AGP 8.13.0 with reliable Hilt integration
+- **Kotlin Version**: Kotlin 2.1.0 for compatibility with AGP 8.13.0
 - **Build command**: Use `.\gradlew build` (PowerShell) or `./gradlew build` (bash)
 
 ### Dependency Management
 - **Version Catalogs**: All dependencies in `gradle/libs.versions.toml` using `libs.` references
-- **No kotlin.android plugin**: Removed from build files due to AGP 9.0 built-in Kotlin support
+- **No kotlin.android plugin**: Removed from build files - AGP 8.13.0 has built-in Kotlin support
 - **ML Kit**: Only translation (`mlkit-translate:17.0.3`) - speech recognition removed due to version conflicts
 
 ## Current Architecture

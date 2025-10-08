@@ -53,6 +53,7 @@ dependencies {
     
     // ML Kit dependencies
     implementation(libs.mlkit.translate)
+    implementation(libs.kotlinx.coroutines.play.services)
     
     // Hilt dependencies
     implementation(libs.hilt.android)

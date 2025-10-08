@@ -47,8 +47,8 @@ BEFORE making ANY code change:
 ❌ WRONG: Using outdated dependency syntax
 ✅ CORRECT: Use libs.dependency.name format from version catalog
 
-❌ WRONG: Ignoring AGP 9.0 compatibility requirements
-✅ CORRECT: Remember android.newDsl=false requirement for Hilt
+❌ WRONG: Adding kotlin.android plugin explicitly to build files
+✅ CORRECT: AGP 8.13.0 has built-in Kotlin support, no explicit plugin needed
 ```
 
 #### Hilt Integration Mistakes
@@ -132,7 +132,7 @@ When creating/editing services:
 When modifying build files:
 
 1. Check libs.versions.toml for existing versions
-2. Verify AGP 9.0 compatibility requirements
+2. Verify AGP 8.13.0 and Kotlin version compatibility
 3. Confirm Kotlin version consistency
 4. Validate plugin application order
 
@@ -174,7 +174,7 @@ Watch for these common issues:
 2. **Check build.gradle.kts dependencies** - verify all required libs are present
 3. **Verify Hilt configuration** - check Application class and modules
 4. **Validate import statements** - ensure all imports are available
-5. **Check version compatibility** - AGP 9.0 has specific requirements
+5. **Check version compatibility** - ensure AGP 8.13.0 and Kotlin 2.1.0 compatibility
 6. **Review existing patterns** - ensure consistency with current codebase
 
 ### When Suggesting Solutions:

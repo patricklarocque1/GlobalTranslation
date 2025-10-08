@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.example.gloabtranslation.ui.conversation.ConversationScreen
 import com.example.gloabtranslation.ui.theme.GloabTranslationTheme
 
 @AndroidEntryPoint
@@ -62,10 +63,27 @@ fun GloabTranslationApp() {
         }
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = "Android",
-                modifier = Modifier.padding(innerPadding)
-            )
+            when (currentDestination) {
+                AppDestinations.CONVERSATION -> {
+                    ConversationScreen(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+                AppDestinations.TEXT_INPUT -> {
+                    // TODO: Create TextInputScreen
+                    Greeting(
+                        name = "Text Input - Coming Soon",
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+                AppDestinations.LANGUAGES -> {
+                    // TODO: Create LanguageManagementScreen
+                    Greeting(
+                        name = "Language Management - Coming Soon",
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
         }
     }
 }
