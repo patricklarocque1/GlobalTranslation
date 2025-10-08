@@ -101,7 +101,8 @@ fun LanguageScreen(
                 items(uiState.availableLanguages) { language ->
                     LanguageModelItem(
                         language = language,
-                        onDownload = { viewModel.downloadLanguage(language.code) }
+                        onDownload = { viewModel.downloadLanguage(language.code) },
+                        onDelete = { viewModel.deleteLanguage(language.code) }
                     )
                 }
             }
@@ -174,6 +175,7 @@ private fun LanguageScreenHeader(
 private fun LanguageModelItem(
     language: LanguageModel,
     onDownload: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -253,8 +255,14 @@ private fun LanguageModelItem(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
-                            onClick = { /* TODO: Implement delete */ }
+                            onClick = onDelete
                         ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text("Remove")
                         }
                     }

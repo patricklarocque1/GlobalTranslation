@@ -132,6 +132,39 @@ class LanguageViewModel @Inject constructor(
             }
         }
     }
+    
+    /**
+     * Deletes a downloaded language model.
+     */
+    fun deleteLanguage(languageCode: String) {
+        if (languageCode == TranslateLanguage.ENGLISH) return // Can't delete English
+        
+        viewModelScope.launch {
+            try {
+                val result = translationService.deleteModel(languageCode)
+                
+                result.fold(
+                    onSuccess = {
+                        val updatedLanguages = _uiState.value.availableLanguages.map { lang ->
+                            if (lang.code == languageCode) {
+                                lang.copy(isDownloaded = false)
+                            } else lang
+                        }
+                        _uiState.value = _uiState.value.copy(availableLanguages = updatedLanguages)
+                    },
+                    onFailure = { exception ->
+                        _uiState.value = _uiState.value.copy(
+                            error = "Failed to delete ${getLanguageName(languageCode)}: ${exception.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Delete error: ${e.message}"
+                )
+            }
+        }
+    }
 
     /**
      * Refreshes the download status of all languages.

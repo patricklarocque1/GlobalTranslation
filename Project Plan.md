@@ -292,3 +292,56 @@ While the app is production-ready, these enhancements could be considered:
 - ✅ Translation auto-downloads models on WiFi when needed
 - ✅ Clear error on cellular without models
 - ✅ No false positives in download status
+
+### Text Input Screen Copy/Speak Functionality ✅ FIXED
+
+**Issue Discovered**: Copy button and speak buttons were not implemented in the text input translation screen (marked as TODO).
+
+**Impact**:
+- Copy button didn't copy translated text to clipboard
+- Speak buttons were placeholder TODOs with no functionality
+- Inconsistent UX compared to conversation screen
+
+**Fix Applied**:
+- Added clipboard manager integration for copying translations
+- Injected TextToSpeechService into TextInputViewModel
+- Implemented `speakText()` function with locale conversion
+- Added speak buttons for both original and translated text
+- Separated "copy to clipboard" from "copy to input" with distinct icons
+
+**Files Modified**:
+- `TextInputScreen.kt` - Added clipboard manager, speak/copy callbacks
+- `TextInputViewModel.kt` - Injected TTS service, added speakText() method
+
+**Testing**:
+- ✅ Copy button copies translated text to system clipboard
+- ✅ Speak buttons work for both original and translated text
+- ✅ History items have both clipboard copy and input copy buttons
+- ✅ TTS properly cleans up in onCleared()
+
+### Language Model Deletion ✅ IMPLEMENTED
+
+**Issue Discovered**: Delete/Remove button for downloaded language models was a TODO placeholder.
+
+**Impact**:
+- Users couldn't remove downloaded models to free storage space
+- No way to re-download corrupted models
+
+**Fix Applied**:
+- Added `deleteModel()` method to TranslationService
+- Uses RemoteModelManager to delete models from storage
+- Cleans up cached translators to free memory
+- Added `deleteLanguage()` function to LanguageViewModel
+- Connected Remove button in UI with delete icon
+
+**Files Modified**:
+- `TranslationService.kt` - Added deleteModel() method
+- `LanguageViewModel.kt` - Added deleteLanguage() function
+- `LanguageScreen.kt` - Connected onDelete callback with icon
+
+**Testing**:
+- ✅ Remove button deletes models from device storage
+- ✅ UI updates immediately to show "Not downloaded"
+- ✅ Cached translators cleaned up properly
+- ✅ English model protected (cannot be deleted)
+- ✅ Error handling for deletion failures

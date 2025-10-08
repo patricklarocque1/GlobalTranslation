@@ -89,6 +89,31 @@ class TranslationService @Inject constructor() {
         }
     }
     
+    /**
+     * Deletes a downloaded translation model from device storage.
+     * This removes both the language pair models (to/from English).
+     */
+    suspend fun deleteModel(languageCode: String): Result<Unit> {
+        return try {
+            val modelManager = com.google.mlkit.common.model.RemoteModelManager.getInstance()
+            val model = com.google.mlkit.nl.translate.TranslateRemoteModel.Builder(languageCode).build()
+            
+            modelManager.deleteDownloadedModel(model).await()
+            
+            // Remove translator from cache if it exists
+            activeTranslators.entries.removeIf { (key, translator) ->
+                if (key.contains(languageCode)) {
+                    translator.close()
+                    true
+                } else false
+            }
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     private fun getOrCreateTranslator(
         fromLanguage: String,
         toLanguage: String

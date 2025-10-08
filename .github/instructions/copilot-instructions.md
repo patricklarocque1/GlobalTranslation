@@ -58,7 +58,7 @@ All features have been successfully implemented:
 
 #### ML Kit Integration
 ```kotlin
-// Translation service pattern (implemented in services/)
+// Translation service pattern (fully implemented in services/)
 @Singleton
 class TranslationService @Inject constructor() {
     
@@ -81,6 +81,9 @@ class TranslationService @Inject constructor() {
         fromLanguage: String,
         toLanguage: String
     ): Result<Unit>
+    
+    // Deletes downloaded models to free storage space
+    suspend fun deleteModel(languageCode: String): Result<Unit>
 }
 ```
 
@@ -257,26 +260,31 @@ Already configured in `AndroidManifest.xml`:
    - All services use @Singleton and @Inject
    - Proper resource cleanup in ViewModels
    - Flow-based reactive APIs
+   - Model deletion support
 
 2. ✅ **All three main screens** with full functionality
-   - ConversationScreen: Live voice translation
-   - TextInputScreen: Manual text translation with history
-   - LanguageScreen: Model download and management
+   - ConversationScreen: Live voice translation with TTS
+   - TextInputScreen: Manual text translation with history, clipboard copy, and TTS
+   - LanguageScreen: Model download, deletion, and status management
 
 3. ✅ **Voice translation** with speech recognition and TTS
    - Real-time speech recognition with Flow
    - Auto-play translation support
    - Comprehensive error handling
 
-4. ✅ **Manual text translation** with history management
+4. ✅ **Manual text translation** with complete feature set
    - Translation history with timestamps
-   - Copy-to-input functionality
+   - Copy to clipboard functionality
+   - Copy to input functionality (separate buttons with distinct icons)
+   - Text-to-speech for original and translated text
    - Language swapping
 
-5. ✅ **Language model download** and management interface
+5. ✅ **Language model management** interface
    - 20+ supported languages
    - Dynamic download status checking
    - WiFi-only model downloads
+   - Delete models to free storage space
+   - Protected English model (cannot be deleted)
 
 ### StateFlow Verification ✅
 

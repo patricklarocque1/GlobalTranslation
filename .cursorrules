@@ -281,7 +281,7 @@ NavigationSuiteScaffold(
 
 ## ML Kit Translation Patterns
 
-### Translation Service Pattern (Already Implemented)
+### Translation Service Pattern (Fully Implemented)
 ```kotlin
 @Singleton
 class TranslationService @Inject constructor() {
@@ -317,6 +317,26 @@ class TranslationService @Inject constructor() {
             fromDownloaded && toDownloaded
         } catch (e: Exception) {
             false
+        }
+    }
+    
+    // Deletes a downloaded model from device storage
+    suspend fun deleteModel(languageCode: String): Result<Unit> {
+        return try {
+            val modelManager = RemoteModelManager.getInstance()
+            val model = TranslateRemoteModel.Builder(languageCode).build()
+            modelManager.deleteDownloadedModel(model).await()
+            
+            // Clean up cached translators
+            activeTranslators.entries.removeIf { (key, translator) ->
+                if (key.contains(languageCode)) {
+                    translator.close()
+                    true
+                } else false
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
     

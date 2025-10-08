@@ -12,7 +12,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -35,6 +38,7 @@ fun TextInputScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val clipboardManager = LocalClipboardManager.current
     
     // Show error snackbar
     uiState.error?.let { error ->
@@ -80,6 +84,15 @@ fun TextInputScreen(
         uiState.currentTranslation?.let { translation ->
             TranslationResultCard(
                 translation = translation,
+                onSpeakOriginal = {
+                    viewModel.speakText(translation.originalText, translation.sourceLanguage)
+                },
+                onSpeakTranslation = {
+                    viewModel.speakText(translation.translatedText, translation.targetLanguage)
+                },
+                onCopyTranslation = {
+                    clipboardManager.setText(AnnotatedString(translation.translatedText))
+                },
                 modifier = Modifier.fillMaxWidth()
             )
             
@@ -110,7 +123,10 @@ fun TextInputScreen(
                 items(uiState.translationHistory) { translation ->
                     TranslationHistoryItem(
                         translation = translation,
-                        onCopyToInput = { viewModel.copyToInput(translation) }
+                        onCopyToInput = { viewModel.copyToInput(translation) },
+                        onCopyTranslation = {
+                            clipboardManager.setText(AnnotatedString(translation.translatedText))
+                        }
                     )
                 }
             }
@@ -257,6 +273,9 @@ private fun TextInputCard(
 @Composable
 private fun TranslationResultCard(
     translation: TextTranslation,
+    onSpeakOriginal: () -> Unit,
+    onSpeakTranslation: () -> Unit,
+    onCopyTranslation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -285,6 +304,13 @@ private fun TranslationResultCard(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
+                IconButton(onClick = onSpeakOriginal) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = "Speak original text",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
@@ -307,12 +333,21 @@ private fun TranslationResultCard(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                IconButton(onClick = { /* TODO: Add TTS */ }) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "Speak translation",
-                        tint = MaterialTheme.colorScheme.secondary
-                    )
+                Row {
+                    IconButton(onClick = onCopyTranslation) {
+                        Icon(
+                            Icons.Default.ContentCopy,
+                            contentDescription = "Copy translation",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    IconButton(onClick = onSpeakTranslation) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = "Speak translation",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
         }
@@ -323,6 +358,7 @@ private fun TranslationResultCard(
 private fun TranslationHistoryItem(
     translation: TextTranslation,
     onCopyToInput: () -> Unit,
+    onCopyTranslation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -344,15 +380,27 @@ private fun TranslationHistoryItem(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                IconButton(
-                    onClick = onCopyToInput,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ContentCopy,
-                        contentDescription = "Copy to input",
-                        modifier = Modifier.size(16.dp)
-                    )
+                Row {
+                    IconButton(
+                        onClick = onCopyTranslation,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ContentCopy,
+                            contentDescription = "Copy translation to clipboard",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onCopyToInput,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Input,
+                            contentDescription = "Copy to input",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
             

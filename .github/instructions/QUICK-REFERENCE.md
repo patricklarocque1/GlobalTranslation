@@ -301,8 +301,9 @@ data class MyUiState(
 - **Min SDK**: 29 (Android 10)
 - **Target SDK**: 36
 - **3 Screens**: Conversation, Text Input, Languages
-- **3 ViewModels**: All use StateFlow pattern
+- **3 ViewModels**: All use StateFlow pattern + TTS injection
 - **4 Services**: All use Hilt @Singleton
+- **Features**: Translation, TTS, Clipboard, Model Management
 
 ## 🔍 ML Kit Translation Gotchas
 
@@ -327,6 +328,8 @@ suspend fun areModelsDownloaded(from: String, to: String): Boolean {
 - First-time downloads **require WiFi** (enforced by DownloadConditions)
 - `translate()` auto-downloads models if missing
 - Check status with `RemoteModelManager.getInstance()`
+- Delete models with `deleteModel(languageCode)`
+- Deletion cleans up cached translators automatically
 - Error messages should mention WiFi requirement
 
 ---

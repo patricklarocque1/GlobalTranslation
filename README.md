@@ -5,11 +5,13 @@ An Android translation app built with Jetpack Compose and ML Kit. **Now feature-
 ## 🚀 Features
 
 - **✅ Live Conversation Translation**: Real-time speech-to-speech translation with microphone input
-- **✅ Text Input Translation**: Manual text translation with history and language swapping  
-- **✅ Language Management**: Download and manage ML Kit translation models offline
+- **✅ Text Input Translation**: Manual text translation with history, copy to clipboard, and TTS playback
+- **✅ Language Management**: Download and delete ML Kit translation models to manage offline storage
 - **✅ Runtime Permissions**: Comprehensive microphone permission handling with visual feedback
 - **✅ Adaptive UI**: Material3 design with NavigationSuiteScaffold for different screen sizes
 - **✅ Reusable Components**: Custom LanguagePicker with dialog and button variants
+- **✅ Clipboard Integration**: Copy translations directly to system clipboard
+- **✅ Text-to-Speech**: Speak both original and translated text in any supported language
 
 ## 🏗️ Current Status
 
@@ -159,13 +161,14 @@ app/src/main/java/com/example/gloabtranslation/
 
 ### Core Services (All Implemented & Verified)
 
-- **TranslationService**: ML Kit integration with model download management ✅
+- **TranslationService**: ML Kit integration with model download and deletion ✅
   - Singleton service with proper resource cleanup
   - Caches active translators for performance
   - Handles model download with WiFi conditions
   - **Fixed**: Properly checks model download status using `RemoteModelManager`
   - Auto-downloads models on first translation (WiFi required)
   - Accurate status reporting to Languages screen
+  - Delete downloaded models to free storage space
   
 - **SpeechRecognitionService**: Android SpeechRecognizer with permission handling ✅
   - Flow-based API for reactive speech recognition
@@ -182,14 +185,18 @@ app/src/main/java/com/example/gloabtranslation/
   - Real-time speech recognition feedback
   - Auto-play translation support
   
-- **TextInputScreen**: Manual text translation with history management ✅
-  - Uses `TextInputViewModel` with StateFlow
+- **TextInputScreen**: Manual text translation with full feature parity ✅
+  - Uses `TextInputViewModel` with StateFlow and TTS service injection
   - Translation history with timestamps
-  - Copy-to-input functionality
+  - Copy to clipboard and copy to input functionality
+  - Text-to-speech for both original and translated text
+  - Speak button integration matching conversation screen
   
-- **LanguageScreen**: ML Kit model download and status tracking ✅
+- **LanguageScreen**: ML Kit model download, deletion, and status tracking ✅
   - Uses `LanguageViewModel` with StateFlow
   - Dynamic download status checking
+  - Download models for offline translation
+  - Delete models to free storage space
   - 20+ supported languages
 
 ### Architecture & Best Practices
@@ -246,6 +253,18 @@ While production-ready, these enhancements could be considered:
 - **Cause**: Checking models by attempting translation (which auto-downloaded)
 - **Fix**: Now uses `RemoteModelManager.getInstance()` to check actual status
 - **Impact**: Accurate download status, better error messages, clear WiFi guidance
+
+**Text Input Copy/Speak Functionality** (Fixed)
+- **Issue**: Copy and speak buttons were TODO placeholders, not functional
+- **Cause**: TextToSpeechService not injected, clipboard not integrated
+- **Fix**: Added TTS injection, clipboard manager, and proper callbacks
+- **Impact**: Full feature parity with conversation screen, improved UX
+
+**Model Deletion Feature** (Implemented)
+- **Issue**: Remove button was a TODO placeholder
+- **Cause**: No deleteModel() method in TranslationService
+- **Fix**: Added deletion support using RemoteModelManager
+- **Impact**: Users can free storage space by removing unused models
 
 ## 🛠️ Troubleshooting
 
