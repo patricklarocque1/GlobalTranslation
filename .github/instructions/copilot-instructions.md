@@ -1,3 +1,7 @@
+---
+applyTo: '**/*'
+---
+
 # Copilot Instructions for GlobalTranslation Android App
 
 ## Project Overview
