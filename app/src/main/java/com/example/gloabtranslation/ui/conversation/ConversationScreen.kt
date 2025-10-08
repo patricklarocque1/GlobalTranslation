@@ -1,6 +1,9 @@
 package com.example.gloabtranslation.ui.conversation
 
 import androidx.compose.foundation.background
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,11 +11,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -20,10 +25,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.gloabtranslation.R
 import com.example.gloabtranslation.model.ConversationTurn
+import com.example.gloabtranslation.ui.components.LanguagePickerButton
 import com.example.gloabtranslation.ui.theme.GloabTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
 
@@ -37,6 +45,27 @@ fun ConversationScreen(
     viewModel: ConversationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    
+    // Permission handling
+    var hasAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PermissionChecker.PERMISSION_GRANTED
+        )
+    }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasAudioPermission = isGranted
+        if (!isGranted) {
+            // Permission denied, show error
+            viewModel.clearError() // Clear any existing error first
+        }
+    }
     
     // Show error snackbar
     uiState.error?.let { error ->
@@ -79,7 +108,14 @@ fun ConversationScreen(
             isDetectingSpeech = uiState.isDetectingSpeech,
             partialText = uiState.partialSpeechText,
             isTranslating = uiState.isTranslating,
-            onStartListening = { viewModel.startListening(uiState.sourceLanguage) },
+            hasPermission = hasAudioPermission,
+            onStartListening = { 
+                if (hasAudioPermission) {
+                    viewModel.startListening(uiState.sourceLanguage)
+                } else {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            },
             onStopListening = viewModel::stopListening,
             onClearHistory = viewModel::clearConversation,
             modifier = Modifier.padding(16.dp)
@@ -128,9 +164,11 @@ private fun LanguageSelectionRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Source language
-            LanguageChip(
-                language = sourceLanguage,
-                onClick = { /* TODO: Show language picker */ },
+            LanguagePickerButton(
+                selectedLanguageCode = sourceLanguage,
+                onLanguageSelected = { language ->
+                    onSourceLanguageChange(language)
+                },
                 modifier = Modifier.weight(1f)
             )
             
@@ -143,16 +181,18 @@ private fun LanguageSelectionRow(
             }
             
             // Target language
-            LanguageChip(
-                language = targetLanguage,
-                onClick = { /* TODO: Show language picker */ },
+            LanguagePickerButton(
+                selectedLanguageCode = targetLanguage,
+                onLanguageSelected = { language ->
+                    onTargetLanguageChange(language)
+                },
                 modifier = Modifier.weight(1f)
             )
             
             // Auto-play toggle
             IconButton(onClick = onAutoPlayToggle) {
                 Icon(
-                    if (autoPlayEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                    if (autoPlayEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.VolumeOff,
                     contentDescription = if (autoPlayEnabled) "Auto-play enabled" else "Auto-play disabled",
                     tint = if (autoPlayEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -244,14 +284,14 @@ private fun ConversationTurnItem(
                 }
                 IconButton(onClick = onSpeakOriginal) {
                     Icon(
-                        Icons.Default.VolumeUp,
+                        Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = "Speak original text",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
             
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             
             // Translated text
             Row(
@@ -274,7 +314,7 @@ private fun ConversationTurnItem(
                 }
                 IconButton(onClick = onSpeakTranslation) {
                     Icon(
-                        Icons.Default.VolumeUp,
+                        Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = "Speak translation",
                         tint = MaterialTheme.colorScheme.secondary
                     )
@@ -291,6 +331,7 @@ private fun SpeechInputArea(
     isDetectingSpeech: Boolean,
     partialText: String,
     isTranslating: Boolean,
+    hasPermission: Boolean,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
     onClearHistory: () -> Unit,
@@ -322,6 +363,7 @@ private fun SpeechInputArea(
         // Status text
         Text(
             text = when {
+                !hasPermission -> "Microphone permission required"
                 isTranslating -> "Translating..."
                 isDetectingSpeech -> "Listening..."
                 isListeningReady -> "Say something"
@@ -329,7 +371,7 @@ private fun SpeechInputArea(
                 else -> "Tap to start speaking"
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (hasPermission) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
@@ -353,6 +395,7 @@ private fun SpeechInputArea(
                 onClick = if (isListening) onStopListening else onStartListening,
                 modifier = Modifier.size(72.dp),
                 containerColor = when {
+                    !hasPermission -> MaterialTheme.colorScheme.error
                     isDetectingSpeech -> MaterialTheme.colorScheme.error
                     isListening -> MaterialTheme.colorScheme.primary
                     else -> MaterialTheme.colorScheme.primaryContainer
@@ -371,6 +414,14 @@ private fun SpeechInputArea(
                             contentDescription = "Stop listening",
                             modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    !hasPermission -> {
+                        Icon(
+                            Icons.Default.MicOff,
+                            contentDescription = "Grant microphone permission",
+                            modifier = Modifier.size(32.dp),
+                            tint = MaterialTheme.colorScheme.onError
                         )
                     }
                     else -> {

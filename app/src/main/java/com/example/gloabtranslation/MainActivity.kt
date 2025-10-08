@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.gloabtranslation.ui.conversation.ConversationScreen
+import com.example.gloabtranslation.ui.languages.LanguageScreen
+import com.example.gloabtranslation.ui.textinput.TextInputScreen
 import com.example.gloabtranslation.ui.theme.GloabTranslationTheme
 
 @AndroidEntryPoint
@@ -70,16 +72,12 @@ fun GloabTranslationApp() {
                     )
                 }
                 AppDestinations.TEXT_INPUT -> {
-                    // TODO: Create TextInputScreen
-                    Greeting(
-                        name = "Text Input - Coming Soon",
+                    TextInputScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
                 AppDestinations.LANGUAGES -> {
-                    // TODO: Create LanguageManagementScreen
-                    Greeting(
-                        name = "Language Management - Coming Soon",
+                    LanguageScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

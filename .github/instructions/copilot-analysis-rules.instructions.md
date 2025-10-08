@@ -5,7 +5,7 @@ applyTo: '**/*'
 # Copilot Code Analysis & Debugging Rules
 
 ## Overview
-These rules ensure thorough code analysis, proper context understanding, and mistake detection when working with the GlobalTranslation Android app codebase.
+These rules ensure thorough code analysis, proper context understanding, and mistake detection when working with the **COMPLETED** GlobalTranslation Android app codebase. All core features are implemented and functional.
 
 ## Core Analysis Principles
 
@@ -15,6 +15,32 @@ These rules ensure thorough code analysis, proper context understanding, and mis
 - **Understand the complete scope** of each file before editing
 - **Check imports, dependencies, and class structure** to understand relationships
 - **Read related files** when changes might affect multiple components
+
+### Current Project Structure (All Implemented)
+
+```
+app/src/main/java/com/example/gloabtranslation/
+├── MainActivity.kt                    # NavigationSuiteScaffold host
+├── GloabTranslationApplication.kt     # @HiltAndroidApp
+├── model/ConversationTurn.kt          # Data model for conversation history
+├── services/                          # ✅ ALL SERVICES IMPLEMENTED
+│   ├── ServicesModule.kt             # Hilt DI module
+│   ├── TranslationService.kt         # ML Kit translation + model mgmt
+│   ├── SpeechRecognitionService.kt   # Android SpeechRecognizer wrapper
+│   └── TextToSpeechService.kt        # TTS with language support
+├── ui/components/
+│   └── LanguagePicker.kt             # Reusable dialog/button components
+├── ui/conversation/                   # ✅ LIVE TRANSLATION COMPLETE
+│   ├── ConversationScreen.kt         # Voice I/O with permissions
+│   └── ConversationViewModel.kt      # State management + services
+├── ui/textinput/                      # ✅ TEXT TRANSLATION COMPLETE
+│   ├── TextInputScreen.kt            # Manual input with history
+│   └── TextInputViewModel.kt         # Translation history management
+├── ui/languages/                      # ✅ MODEL MANAGEMENT COMPLETE
+│   ├── LanguageScreen.kt             # Download/status UI
+│   └── LanguageViewModel.kt          # ML Kit model operations
+└── ui/theme/                          # Material3 theme configuration
+```
 
 ### 2. Complete Context Gathering Rules
 
@@ -47,8 +73,14 @@ BEFORE making ANY code change:
 ❌ WRONG: Using outdated dependency syntax
 ✅ CORRECT: Use libs.dependency.name format from version catalog
 
-❌ WRONG: Adding kotlin.android plugin explicitly to build files
-✅ CORRECT: AGP 8.13.0 has built-in Kotlin support, no explicit plugin needed
+❌ WRONG: Missing kotlin.android plugin in app/build.gradle.kts
+✅ CORRECT: kotlin.android plugin IS required for proper Kotlin compilation
+
+❌ WRONG: KSP version format 2.2.20-1.0.x
+✅ CORRECT: KSP changed versioning to 2.2.20-2.0.x (note the 2.0 not 1.0)
+
+❌ WRONG: Mismatched JVM targets between Java and Kotlin
+✅ CORRECT: Both compileOptions and kotlinOptions must target JVM 11
 ```
 
 #### Hilt Integration Mistakes
@@ -132,9 +164,16 @@ When creating/editing services:
 When modifying build files:
 
 1. Check libs.versions.toml for existing versions
-2. Verify AGP 8.13.0 and Kotlin version compatibility
-3. Confirm Kotlin version consistency
-4. Validate plugin application order
+2. Verify AGP 8.13.0 and Kotlin 2.2.20 compatibility
+3. Confirm KSP version matches Kotlin (2.2.20-2.0.2 format, not 1.0.x)
+4. Validate plugin application order (kotlin.android is required!)
+5. Ensure JVM target alignment between compileOptions and kotlinOptions
+6. Verify all required plugins are present:
+   - android.application
+   - kotlin.android (REQUIRED)
+   - kotlin.compose
+   - ksp (for Hilt)
+   - hilt
 
 ## Context Understanding Rules
 
@@ -163,6 +202,9 @@ Watch for these common issues:
 
 - **Template code confusion** - Don't assume template features are final
 - **Dependency version mismatches** - Always check version catalog
+- **KSP version format errors** - Use 2.0.x not 1.0.x for Kotlin 2.2.20
+- **Missing kotlin.android plugin** - Required for Kotlin compilation
+- **JVM target mismatch** - Must align compileOptions and kotlinOptions
 - **Hilt setup incomplete** - Verify full dependency chain
 - **Navigation structure assumptions** - Check current AppDestinations
 
@@ -174,8 +216,9 @@ Watch for these common issues:
 2. **Check build.gradle.kts dependencies** - verify all required libs are present
 3. **Verify Hilt configuration** - check Application class and modules
 4. **Validate import statements** - ensure all imports are available
-5. **Check version compatibility** - ensure AGP 8.13.0 and Kotlin 2.1.0 compatibility
-6. **Review existing patterns** - ensure consistency with current codebase
+5. **Check version compatibility** - ensure AGP 8.13.0, Kotlin 2.2.20, and KSP 2.2.20-2.0.2 compatibility
+6. **Verify JVM target alignment** - both Java and Kotlin must target JVM 11
+7. **Review existing patterns** - ensure consistency with current codebase
 
 ### When Suggesting Solutions:
 
