@@ -3,11 +3,11 @@
 **App Name:** GlobalTranslation  
 **Template:** Android Studio "NavigationSuiteScaffold" (Adaptive Navigation)  
 **Architecture:** MVVM with Jetpack Compose + Single-Activity pattern  
-**Status:** ✅ **COMPLETED** - All core features implemented
+**Status:** ✅ **Phase 2 COMPLETED** - Camera Translation Live!
 
-## 🎯 **Implementation Complete**
+## 🎯 **Implementation Status**
 
-This project has successfully transitioned from template to full-featured translation app with all planned features implemented.
+This project has successfully transitioned from template to full-featured translation app. **Phase 2 (Camera Translation + Material3 Expressive Theme) now complete!**
 
 ## ✅ 1. Template Transformation - COMPLETED
 
@@ -17,8 +17,9 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 |------------------|----------------|---------------------|
 | Basic Navigation | Live Conversation Mode | `conversation/ConversationScreen.kt` + ViewModel |
 | Secondary Screen | Text Input Translation | `textinput/TextInputScreen.kt` + ViewModel |
-| Tertiary Screen | Language Management | `languages/LanguageScreen.kt` + ViewModel |
-| Template UI | Modern Material3 | Adaptive NavigationSuiteScaffold with custom components |
+| Tertiary Screen | Camera Translation (NEW!) | `camera/CameraScreen.kt` + ViewModel |
+| Fourth Screen | Language Management | `languages/LanguageScreen.kt` + ViewModel |
+| Template UI | Material3 Expressive Theme | Adaptive NavigationSuiteScaffold + Lavender/Purple palette |
 
 ## ✅ 2. Implementation Status - ALL COMPLETED
 
@@ -47,10 +48,24 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Key Methods:** `speak()`, `setLanguage()`, lifecycle management
 - **Integration:** Seamless integration with translation workflow
 
+#### ✅ TextRecognitionService.kt - IMPLEMENTED (NEW!)
+
+- **Status:** ML Kit Text Recognition integration complete
+- **Features:** OCR with bounding boxes, hierarchical text structure (blocks > lines)
+- **Key Methods:** `recognizeText()`, proper resource cleanup
+- **Hilt Integration:** @Singleton with proper dependency injection
+
+#### ✅ CameraTranslationService.kt - IMPLEMENTED (NEW!)
+
+- **Status:** Combined OCR + Translation pipeline complete
+- **Features:** Parallel text block translation, model availability checking
+- **Key Methods:** `processFrame()`, async translation with awaitAll
+- **Performance:** Optimized for real-time camera processing
+
 #### ✅ ServicesModule.kt - IMPLEMENTED
 
 - **Status:** Hilt dependency injection module complete
-- **Features:** All services properly provided as singletons
+- **Features:** All services properly provided as singletons (now includes camera services)
 - **Dependencies:** Complete injection graph for all UI components
 
 ### UI Screens Module ✅ COMPLETED
@@ -69,6 +84,14 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Features:** Text input, translation history, language swapping
 - **UI Components:** Material3 text fields, history list, language pickers
 - **State Management:** Translation history persistence, error handling
+
+#### ✅ CameraScreen.kt + ViewModel - IMPLEMENTED (NEW!)
+
+- **Status:** Real-time camera translation fully functional
+- **Features:** CameraX preview, OCR + translation pipeline, throttled processing
+- **UI Components:** Permission UI, flash toggle, language selector, translation display
+- **Permissions:** Runtime CAMERA permission handling with Accompanist
+- **Performance:** 500ms throttling, parallel translation, efficient memory management
 
 #### ✅ LanguageScreen.kt + ViewModel - IMPLEMENTED
 
@@ -117,12 +140,14 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Coroutines:** All async operations use `viewModelScope` for automatic cancellation
 - **Type Safety:** Strong typing with sealed states and data classes
 
-### Features ✅ ALL IMPLEMENTED
+### Features ✅ ALL CORE + PHASE 2 IMPLEMENTED
 
 - **Live Conversation Translation:** Voice input → Translation → Voice output
 - **Manual Text Translation:** Text input with translation history
+- **Camera Translation (NEW!):** Real-time OCR + translation with AR-style overlay
 - **Language Model Management:** Download/manage offline translation models
-- **Runtime Permissions:** Microphone permission handling with UI feedback
+- **Runtime Permissions:** Camera + microphone permission handling with UI feedback
+- **Material3 Expressive Theme (NEW!):** Lavender/purple palette with large corner radii
 - **Modern UI:** Material3 with adaptive navigation and custom components
 
 ## 🚀 **Project Ready for Production**
@@ -208,9 +233,11 @@ app/src/main/java/com/example/gloabtranslation/
 │   └── ConversationTurn.kt           # Data model ✅
 ├── services/                         # All @Singleton with @Inject ✅
 │   ├── ServicesModule.kt             # Hilt module ✅
-│   ├── TranslationService.kt         # ML Kit integration ✅
+│   ├── TranslationService.kt         # ML Kit translation ✅
 │   ├── SpeechRecognitionService.kt   # Speech recognition ✅
-│   └── TextToSpeechService.kt        # TTS integration ✅
+│   ├── TextToSpeechService.kt        # TTS integration ✅
+│   ├── TextRecognitionService.kt     # ML Kit OCR ✅ NEW
+│   └── CameraTranslationService.kt   # OCR + Translation ✅ NEW
 ├── ui/
 │   ├── components/
 │   │   └── LanguagePicker.kt         # Reusable dialog/button ✅
@@ -220,13 +247,18 @@ app/src/main/java/com/example/gloabtranslation/
 │   ├── textinput/
 │   │   ├── TextInputScreen.kt        # Text input UI ✅
 │   │   └── TextInputViewModel.kt     # @HiltViewModel with StateFlow ✅
+│   ├── camera/                       # ✅ NEW
+│   │   ├── CameraScreen.kt           # Camera translation UI ✅
+│   │   └── CameraViewModel.kt        # @HiltViewModel with StateFlow ✅
 │   ├── languages/
 │   │   ├── LanguageScreen.kt         # Model management UI ✅
 │   │   └── LanguageViewModel.kt      # @HiltViewModel with StateFlow ✅
-│   └── theme/                        # Material3 theme ✅
+│   └── theme/                        # Material3 Expressive Theme ✅
 │       ├── Color.kt
 │       ├── Theme.kt
-│       └── Type.kt
+│       ├── Type.kt
+│       ├── ExpressiveColors.kt       # Lavender/purple ✅ NEW
+│       └── ExpressiveShapes.kt       # Large radii ✅ NEW
 ```
 
 ### Potential Improvements (Future Enhancements)
@@ -345,3 +377,141 @@ While the app is production-ready, these enhancements could be considered:
 - ✅ Cached translators cleaned up properly
 - ✅ English model protected (cannot be deleted)
 - ✅ Error handling for deletion failures
+
+---
+
+## 🎉 **Phase 2 Implementation - COMPLETED** (October 8-9, 2025)
+
+### Material 3 Expressive Theme ✅ COMPLETE
+
+**Implementation Date**: October 8, 2025
+
+#### Files Created:
+- ✅ `ui/theme/ExpressiveColors.kt` - Lavender/purple color schemes (light + dark)
+- ✅ `ui/theme/ExpressiveShapes.kt` - Large corner radii (12dp-32dp + pill shapes)
+
+#### Files Modified:
+- ✅ `ui/theme/Theme.kt` - Integrated expressive theme components
+- ✅ `ui/theme/Type.kt` - Typography enhancements
+
+#### Results:
+- ✅ Soft, modern aesthetic matching Google Translate
+- ✅ Large rounded corners throughout (pill-shaped buttons)
+- ✅ Consistent lavender/purple branding
+- ✅ Built and installed successfully on Pixel 9 Pro XL
+
+---
+
+### Camera Translation Feature ✅ COMPLETE
+
+**Implementation Date**: October 8-9, 2025
+
+#### Dependencies Added:
+- ✅ CameraX 1.3.1 (core, camera2, lifecycle, view)
+- ✅ ML Kit Text Recognition 16.0.1
+- ✅ Accompanist Permissions 0.34.0
+- ✅ All added to `gradle/libs.versions.toml` and `app/build.gradle.kts`
+- ✅ Gradle sync successful
+
+#### Permissions Added:
+- ✅ CAMERA permission in AndroidManifest.xml
+- ✅ Camera hardware features declared (optional)
+- ✅ Runtime permission handling with Accompanist
+
+#### Services Implemented:
+
+**TextRecognitionService.kt** ✅
+- ML Kit OCR wrapper for text extraction
+- Processes images and extracts text blocks with bounding boxes
+- Returns hierarchical DetectedText structure (blocks > lines)
+- Proper cleanup with `recognizer.close()`
+- @Singleton with @Inject constructor
+
+**CameraTranslationService.kt** ✅
+- Combined OCR + Translation pipeline
+- Processes camera frames through recognition pipeline
+- Translates detected text blocks in parallel (async + awaitAll)
+- Returns TranslatedTextBlock with original + translated text
+- Model availability checking before translation
+- @Singleton with @Inject constructor
+
+#### ViewModel Implemented:
+
+**CameraViewModel.kt** ✅
+- StateFlow pattern (private MutableStateFlow + public StateFlow)
+- Language selection (source/target with swap functionality)
+- Flash toggle state management
+- Freeze frame mode for stable reading
+- Frame processing with throttling (500ms interval)
+- Error handling with user-friendly messages
+- Converts TranslatedTextBlock to DetectedTextBlock for UI
+- Proper cleanup in `onCleared()`
+
+#### UI Screen Implemented:
+
+**CameraScreen.kt** ✅
+- Full camera translation UI with CameraX
+- Camera preview using ProcessCameraProvider + PreviewView
+- Permission request UI when camera not granted
+- Top controls bar:
+  - Flash toggle button
+  - Language selector (source ↔ target)
+- Bottom translation card showing detected text blocks
+- Processing indicator (LinearProgressIndicator)
+- Error card with dismiss functionality
+- Image analysis pipeline with throttled processing
+- Proper lifecycle management (DisposableEffect)
+- Material3 Expressive Theme styling
+
+#### Navigation Integration:
+- ✅ Camera destination added to `AppDestinations` enum
+- ✅ Camera route integrated in MainActivity navigation
+- ✅ Camera icon (CameraAlt) in adaptive bottom navigation
+- ✅ 4 navigation tabs now: Conversation, Text Input, Camera, Languages
+
+#### Performance Optimizations:
+- ✅ Frame processing throttled to 500ms intervals (prevents overload)
+- ✅ Parallel async translation of multiple text blocks (coroutines)
+- ✅ Proper image cleanup with `imageProxy.close()` (memory management)
+- ✅ Freeze frame mode to reduce processing (user control)
+- ✅ BackpressureStrategy.KEEP_ONLY_LATEST (CameraX optimization)
+
+#### Testing Status:
+- ✅ Camera permission flow tested (grant/deny scenarios)
+- ✅ Text recognition tested with printed text, signs, menus
+- ✅ Translation accuracy verified with multiple language pairs
+- ✅ Flash toggle tested in low-light conditions
+- ✅ Performance verified - no lag during processing
+- ✅ Error handling tested without WiFi, without models
+- ✅ Built and installed successfully on Pixel 9 Pro XL
+- ✅ All features operational
+
+---
+
+## 📊 Overall Feature Progress
+
+### Completed Phases (2/8):
+- ✅ **Phase 1: Material 3 Expressive Theme** (100%) - Completed Oct 8, 2025
+- ✅ **Phase 2: Camera Translation** (100%) - Completed Oct 9, 2025
+
+### Remaining Phases (Per FEATURE_PLAN.md):
+- ⏳ **Phase 3: Handwriting Input** (0%) - ML Kit Digital Ink Recognition
+- ⏳ **Phase 4: Face-to-Face Mode** (0%) - Split-screen conversation
+- ⏳ **Phase 5: AI Practice (Gemini)** (0%) - Conversational learning
+- ⏳ **Phase 6: Image Translation** (0%) - Upload/translate images
+- ⏳ **Phase 7: Phrasebook** (0%) - Saved translations with Room
+- ⏳ **Phase 8: UI/UX Enhancements** (0%) - Polish and animations
+
+### Overall Progress: **25% Complete (2/8 phases)**
+- Ahead of original 22-week timeline by 2 weeks! 🚀
+
+---
+
+## 🎯 Next Phase Recommendation
+
+**Phase 3: Handwriting Input** (Per FEATURE_PLAN.md)
+- **Priority**: MEDIUM
+- **Estimated Time**: 2-3 weeks
+- **Dependencies**: ML Kit Digital Ink Recognition
+- **Key Features**: Drawing canvas, stroke recognition, translation integration
+- **Value**: Enables complex script input (Chinese, Japanese, Korean, Arabic)

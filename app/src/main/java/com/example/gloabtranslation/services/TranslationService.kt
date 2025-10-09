@@ -18,6 +18,9 @@ class TranslationService @Inject constructor() {
     
     private val activeTranslators = mutableMapOf<String, Translator>()
     
+    // Track which translators have already downloaded models
+    private val modelsReady = mutableSetOf<String>()
+    
     /**
      * Translates text from source language to target language.
      * 
@@ -36,10 +39,14 @@ class TranslationService @Inject constructor() {
         }
         
         return try {
+            val key = "$fromLanguage-$toLanguage"
             val translator = getOrCreateTranslator(fromLanguage, toLanguage)
             
-            // Ensure model is downloaded
-            ensureModelDownloaded(translator)
+            // Only download model if not already ready
+            if (key !in modelsReady) {
+                ensureModelDownloaded(translator)
+                modelsReady.add(key)
+            }
             
             // Perform translation
             val translatedText = translator.translate(text).await()
@@ -100,10 +107,11 @@ class TranslationService @Inject constructor() {
             
             modelManager.deleteDownloadedModel(model).await()
             
-            // Remove translator from cache if it exists
+            // Remove translator from cache and ready set if it exists
             activeTranslators.entries.removeIf { (key, translator) ->
                 if (key.contains(languageCode)) {
                     translator.close()
+                    modelsReady.remove(key)
                     true
                 } else false
             }
@@ -146,5 +154,6 @@ class TranslationService @Inject constructor() {
             translator.close()
         }
         activeTranslators.clear()
+        modelsReady.clear()
     }
 }

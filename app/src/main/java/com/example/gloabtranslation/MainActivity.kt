@@ -8,6 +8,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Translate
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.example.gloabtranslation.ui.camera.CameraScreen
 import com.example.gloabtranslation.ui.conversation.ConversationScreen
 import com.example.gloabtranslation.ui.languages.LanguageScreen
 import com.example.gloabtranslation.ui.textinput.TextInputScreen
@@ -76,6 +78,11 @@ fun GloabTranslationApp() {
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
+                AppDestinations.CAMERA -> {
+                    CameraScreen(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
                 AppDestinations.LANGUAGES -> {
                     LanguageScreen(
                         modifier = Modifier.padding(innerPadding)
@@ -92,6 +99,7 @@ enum class AppDestinations(
 ) {
     CONVERSATION("Conversation", Icons.Filled.Mic),
     TEXT_INPUT("Text Input", Icons.Filled.Translate),
+    CAMERA("Camera", Icons.Filled.CameraAlt),
     LANGUAGES("Languages", Icons.Filled.Language),
 }
 

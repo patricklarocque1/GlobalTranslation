@@ -76,7 +76,7 @@ fun LanguageScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Download language models to enable offline translation. Models are paired with English for translation.",
+                    text = "Download language models to enable offline translation. All models are paired with English (e.g., English↔Spanish). Requires WiFi for first download.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

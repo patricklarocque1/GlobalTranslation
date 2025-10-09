@@ -1,13 +1,14 @@
 # Cursor AI Rules for GlobalTranslation Android App
 
 ## Project Context
-This is a **PRODUCTION-READY** Android translation app built with Jetpack Compose and ML Kit. All core features are implemented and verified. The codebase follows Android best practices for 2025.
+This is a **PRODUCTION-READY** Android translation app built with Jetpack Compose and ML Kit. **Phase 2 (Camera Translation) now complete!** The codebase follows Android best practices for 2025.
 
 ## Core Technologies (Verified)
 - **Build**: AGP 8.13.0, Kotlin 2.2.20, KSP 2.2.20-2.0.2, Hilt 2.57.2
 - **Architecture**: MVVM with StateFlow, Hilt DI, Jetpack Compose
-- **UI**: Material3 with NavigationSuiteScaffold (adaptive navigation)
+- **UI**: Material3 Expressive Theme (lavender/purple palette, large corner radii)
 - **Translation**: ML Kit Translate API with offline model management
+- **Camera**: CameraX 1.3.1 with ML Kit Text Recognition for OCR
 - **Min/Target SDK**: 29/36, JVM Target: 11
 
 ## Critical Build Rules
@@ -102,7 +103,9 @@ app/src/main/java/com/example/gloabtranslation/
 │   ├── ServicesModule.kt             # Hilt DI module
 │   ├── TranslationService.kt         # ML Kit translation
 │   ├── SpeechRecognitionService.kt   # Speech recognition
-│   └── TextToSpeechService.kt        # TTS
+│   ├── TextToSpeechService.kt        # TTS
+│   ├── TextRecognitionService.kt     # ML Kit OCR ✅ NEW
+│   └── CameraTranslationService.kt   # OCR + Translation ✅ NEW
 ├── ui/
 │   ├── components/
 │   │   └── LanguagePicker.kt         # Reusable components
@@ -112,10 +115,15 @@ app/src/main/java/com/example/gloabtranslation/
 │   ├── textinput/                    # Manual text translation
 │   │   ├── TextInputScreen.kt
 │   │   └── TextInputViewModel.kt     # @HiltViewModel + StateFlow
+│   ├── camera/                       # Camera translation ✅ NEW
+│   │   ├── CameraScreen.kt           # Real-time OCR translation
+│   │   └── CameraViewModel.kt        # @HiltViewModel + StateFlow
 │   ├── languages/                    # Model management
 │   │   ├── LanguageScreen.kt
 │   │   └── LanguageViewModel.kt      # @HiltViewModel + StateFlow
-│   └── theme/                        # Material3 theme
+│   └── theme/                        # Material3 Expressive Theme
+│       ├── ExpressiveColors.kt       # Lavender/purple ✅ NEW
+│       └── ExpressiveShapes.kt       # Large corner radii ✅ NEW
 ```
 
 ## Hilt Dependency Injection Rules

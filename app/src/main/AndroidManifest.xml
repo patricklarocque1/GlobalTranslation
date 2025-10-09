@@ -5,6 +5,11 @@
     <!-- Required permissions for translation app -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- Camera hardware features (not required, but optimized) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:name="com.example.gloabtranslation.GloabTranslationApplication"

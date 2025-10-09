@@ -62,7 +62,17 @@ dependencies {
     
     // ML Kit dependencies
     implementation(libs.mlkit.translate)
+    implementation(libs.mlkit.text.recognition)
     implementation(libs.kotlinx.coroutines.play.services)
+    
+    // CameraX dependencies
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    
+    // Permissions helper
+    implementation(libs.accompanist.permissions)
     
     // Hilt dependencies
     implementation(libs.hilt.android)

@@ -6,8 +6,10 @@ An Android translation app built with Jetpack Compose and ML Kit. **Now feature-
 
 - **✅ Live Conversation Translation**: Real-time speech-to-speech translation with microphone input
 - **✅ Text Input Translation**: Manual text translation with history, copy to clipboard, and TTS playback
+- **✅ Camera Translation (NEW!)**: Real-time camera text recognition and translation with AR-style overlay
 - **✅ Language Management**: Download and delete ML Kit translation models to manage offline storage
-- **✅ Runtime Permissions**: Comprehensive microphone permission handling with visual feedback
+- **✅ Runtime Permissions**: Comprehensive camera and microphone permission handling with visual feedback
+- **✅ Expressive Material3 Theme**: Modern design with lavender/purple palette and large corner radii
 - **✅ Adaptive UI**: Material3 design with NavigationSuiteScaffold for different screen sizes
 - **✅ Reusable Components**: Custom LanguagePicker with dialog and button variants
 - **✅ Clipboard Integration**: Copy translations directly to system clipboard
@@ -28,13 +30,15 @@ An Android translation app built with Jetpack Compose and ML Kit. **Now feature-
 
 ## 🛠️ Tech Stack
 
-- **UI**: Jetpack Compose with Material3 and adaptive navigation
+- **UI**: Jetpack Compose with Material3 Expressive Theme and adaptive navigation
 - **Architecture**: MVVM with StateFlow and Hilt dependency injection
 - **Translation**: ML Kit Translate API with offline model management
+- **Camera**: CameraX for preview and image analysis
+- **OCR**: ML Kit Text Recognition v2 for camera text detection
 - **Speech**: Android SpeechRecognizer + TextToSpeech integration
 - **Navigation**: NavigationSuiteScaffold (adaptive for phone/tablet/desktop)
 - **Build**: Gradle with Version Catalogs and KSP
-- **Permissions**: Runtime permission handling with visual feedback
+- **Permissions**: Runtime permission handling with Accompanist Permissions
 
 ## 🔧 Build Requirements
 
@@ -112,7 +116,9 @@ app/src/main/java/com/example/gloabtranslation/
 │   ├── ServicesModule.kt             # Hilt dependency injection module ✅
 │   ├── TranslationService.kt         # ML Kit translation + model management ✅
 │   ├── SpeechRecognitionService.kt   # Android SpeechRecognizer wrapper ✅
-│   └── TextToSpeechService.kt        # TTS service with language support ✅
+│   ├── TextToSpeechService.kt        # TTS service with language support ✅
+│   ├── TextRecognitionService.kt     # ML Kit Text Recognition (OCR) ✅ NEW
+│   └── CameraTranslationService.kt   # Combined OCR + Translation ✅ NEW
 ├── ui/
 │   ├── components/
 │   │   └── LanguagePicker.kt         # Reusable language dialog/button ✅
@@ -122,13 +128,19 @@ app/src/main/java/com/example/gloabtranslation/
 │   ├── textinput/                    # Manual text translation ✅
 │   │   ├── TextInputScreen.kt        # Text input UI with history ✅
 │   │   └── TextInputViewModel.kt     # @HiltViewModel with StateFlow ✅
+│   ├── camera/                       # Camera translation (AR overlay) ✅ NEW
+│   │   ├── CameraScreen.kt           # Camera preview + OCR translation ✅
+│   │   └── CameraViewModel.kt        # @HiltViewModel with StateFlow ✅
 │   ├── languages/                    # ML Kit model management ✅
 │   │   ├── LanguageScreen.kt         # Model download/status UI ✅
 │   │   └── LanguageViewModel.kt      # @HiltViewModel with StateFlow ✅
-│   └── theme/                        # Material3 theme configuration ✅
+│   └── theme/                        # Material3 Expressive Theme ✅
 │       ├── Color.kt
 │       ├── Theme.kt
-│       └── Type.kt
+│       ├── Type.kt
+│       ├── ExpressiveColors.kt       # Lavender/purple palette ✅ NEW
+│       ├── ExpressiveShapes.kt       # Large corner radii ✅ NEW
+│       └── ExpressiveTypography.kt   # (Future) ✅ NEW
 ```
 
 ### Architecture Highlights
@@ -178,6 +190,17 @@ app/src/main/java/com/example/gloabtranslation/
   - Flow-based speech events
   - Lifecycle-aware cleanup
 
+- **TextRecognitionService**: ML Kit Text Recognition for OCR ✅ NEW
+  - Processes images and extracts text blocks with bounding boxes
+  - Returns hierarchical DetectedText structure (blocks > lines)
+  - Proper resource cleanup with recognizer.close()
+
+- **CameraTranslationService**: Combined OCR + Translation pipeline ✅ NEW
+  - Processes camera frames through recognition pipeline
+  - Translates detected text blocks in parallel (async + awaitAll)
+  - Returns TranslatedTextBlock with original + translated text
+  - Model availability checking before translation
+
 ### UI Screens (All Implemented & Verified)
 
 - **ConversationScreen**: Live voice translation with microphone input ✅
@@ -191,6 +214,15 @@ app/src/main/java/com/example/gloabtranslation/
   - Copy to clipboard and copy to input functionality
   - Text-to-speech for both original and translated text
   - Speak button integration matching conversation screen
+
+- **CameraScreen**: Real-time camera translation with AR-style overlay ✅ NEW
+  - Uses `CameraViewModel` with StateFlow
+  - CameraX preview with lifecycle management
+  - Permission request UI with Accompanist Permissions
+  - Real-time text detection and translation with throttling
+  - Flash toggle and language selection controls
+  - Processing indicator and error handling
+  - Document-style translation display
   
 - **LanguageScreen**: ML Kit model download, deletion, and status tracking ✅
   - Uses `LanguageViewModel` with StateFlow
@@ -218,7 +250,9 @@ The app is feature-complete and follows Android best practices:
 ✅ **Complete Features**
 - Live conversation translation capabilities
 - Manual text input translation with history
+- Camera translation with real-time OCR (NEW!)
 - Offline translation model management
+- Material3 Expressive Theme with lavender/purple palette (NEW!)
 - Modern, adaptive Material3 UI
 - Comprehensive error handling and permissions
 
