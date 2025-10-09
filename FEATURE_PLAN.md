@@ -18,12 +18,11 @@ This document outlines the implementation plan for transforming GlobalTranslatio
 ### Planned Additions 🎯
 1. **Material 3 Expressive Theme Redesign**
 2. **Camera Translation (AR Overlay)**
-3. **Handwriting Input**
-4. **Face-to-Face Conversation Mode (Split Screen)**
-5. **AI-Powered Practice Conversations (Gemini)**
-6. **Image Translation**
-7. **Phrasebook / Saved Translations**
-8. **Enhanced UI/UX with Promotional Cards**
+3. **Face-to-Face Conversation Mode (Split Screen)**
+4. **AI-Powered Practice Conversations (Gemini)**
+5. **Image Translation**
+6. **Phrasebook / Saved Translations**
+7. **Enhanced UI/UX with Promotional Cards**
 
 ---
 
@@ -265,178 +264,7 @@ fun TranslationOverlay(
 
 ---
 
-## ✍️ Phase 3: Handwriting Input
-
-**Priority**: MEDIUM  
-**Estimated Time**: 2-3 weeks  
-**Dependencies**: ML Kit Digital Ink Recognition
-
-### Overview
-Enable users to draw characters/words on screen for recognition and translation, especially useful for complex scripts (Chinese, Japanese, Korean, Arabic).
-
-### Technical Stack
-
-#### Required Dependencies
-```kotlin
-// gradle/libs.versions.toml
-[versions]
-mlkit-digital-ink = "18.1.0"
-
-[libraries]
-mlkit-digital-ink = { module = "com.google.mlkit:digital-ink-recognition", version.ref = "mlkit-digital-ink" }
-```
-
-### Architecture Pattern
-```
-ui/handwriting/
-├── HandwritingCanvas.kt         # Drawing surface
-├── HandwritingViewModel.kt      # Ink recognition + translation
-└── RecognitionSuggestions.kt    # Top suggestions display
-
-services/
-└── HandwritingRecognitionService.kt  # ML Kit Digital Ink
-```
-
-### Features to Implement
-
-#### 1. Drawing Canvas
-```kotlin
-@Composable
-fun HandwritingCanvas(
-    modifier: Modifier = Modifier,
-    viewModel: HandwritingViewModel = hiltViewModel()
-) {
-    var currentPath by remember { mutableStateOf(Path()) }
-    val strokes by viewModel.strokes.collectAsStateWithLifecycle()
-    
-    Column(modifier = modifier) {
-        // Suggestions bar at top
-        RecognitionSuggestions(
-            suggestions = viewModel.suggestions.collectAsStateWithLifecycle().value,
-            onSelect = viewModel::selectSuggestion
-        )
-        
-        // Drawing canvas
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .background(Color.White)
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            currentPath.moveTo(offset.x, offset.y)
-                        },
-                        onDrag = { change, _ ->
-                            currentPath.lineTo(change.position.x, change.position.y)
-                        },
-                        onDragEnd = {
-                            viewModel.addStroke(currentPath)
-                            currentPath = Path()
-                        }
-                    )
-                }
-        ) {
-            // Draw all completed strokes
-            strokes.forEach { stroke ->
-                drawPath(
-                    path = stroke.path,
-                    color = Color.Black,
-                    style = Stroke(width = 4.dp.toPx())
-                )
-            }
-            
-            // Draw current stroke
-            drawPath(
-                path = currentPath,
-                color = Color.Black,
-                style = Stroke(width = 4.dp.toPx())
-            )
-        }
-        
-        // Controls
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            IconButton(onClick = viewModel::undo) {
-                Icon(Icons.Default.Undo, "Undo")
-            }
-            IconButton(onClick = viewModel::clear) {
-                Icon(Icons.Default.Clear, "Clear")
-            }
-            Button(onClick = viewModel::recognize) {
-                Text("Recognize")
-            }
-        }
-    }
-}
-```
-
-#### 2. Digital Ink Recognition Service
-```kotlin
-@Singleton
-class HandwritingRecognitionService @Inject constructor() {
-    
-    private var recognizer: DigitalInkRecognizer? = null
-    
-    suspend fun setLanguage(languageCode: String): Result<Unit> {
-        return try {
-            val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(languageCode)
-            val model = DigitalInkRecognitionModel.builder(modelIdentifier).build()
-            
-            // Download model if needed
-            val modelManager = RemoteModelManager.getInstance()
-            modelManager.download(model, DownloadConditions.Builder().build()).await()
-            
-            // Create recognizer
-            recognizer = DigitalInkRecognition.getClient(
-                DigitalInkRecognizerOptions.builder(model).build()
-            )
-            
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    suspend fun recognize(ink: Ink): Result<List<String>> {
-        return try {
-            val result = recognizer?.recognize(ink)?.await()
-            val candidates = result?.candidates?.map { it.text } ?: emptyList()
-            Result.success(candidates)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    fun cleanup() {
-        recognizer?.close()
-    }
-}
-```
-
-### Implementation Checklist
-- [ ] Add ML Kit Digital Ink Recognition dependency
-- [ ] Create HandwritingCanvas with touch detection
-- [ ] Implement stroke storage and rendering
-- [ ] Build HandwritingRecognitionService
-- [ ] Add language model download management
-- [ ] Create real-time suggestion display
-- [ ] Implement undo/redo functionality
-- [ ] Add clear canvas button
-- [ ] Integrate with translation service
-- [ ] Support multiple writing styles (print, cursive)
-- [ ] Add stroke width adjustment
-- [ ] Implement color picker for ink
-- [ ] Handle multi-character recognition
-- [ ] Add gesture shortcuts (double-tap to clear, etc.)
-
----
-
-## 👥 Phase 4: Face-to-Face Conversation Mode (Split Screen)
+## 👥 Phase 3: Face-to-Face Conversation Mode (Split Screen)
 
 **Priority**: HIGH  
 **Estimated Time**: 2 weeks  
@@ -579,7 +407,7 @@ class FaceToFaceModeViewModel @Inject constructor(
 
 ---
 
-## 🤖 Phase 5: AI-Powered Practice Conversations (Gemini)
+## 🤖 Phase 4: AI-Powered Practice Conversations (Gemini)
 
 **Priority**: MEDIUM  
 **Estimated Time**: 4-5 weeks  
@@ -898,7 +726,7 @@ fun PracticeHomeScreen(
 
 ---
 
-## 🖼️ Phase 6: Image Translation
+## 🖼️ Phase 5: Image Translation
 
 **Priority**: MEDIUM  
 **Estimated Time**: 2 weeks  
@@ -1081,7 +909,7 @@ class ImageTranslationService @Inject constructor(
 
 ---
 
-## 📚 Phase 7: Phrasebook / Saved Translations
+## 📚 Phase 6: Phrasebook / Saved Translations
 
 **Priority**: LOW  
 **Estimated Time**: 1-2 weeks  
@@ -1297,7 +1125,7 @@ fun TranslationResultCard(
 
 ---
 
-## 🎯 Phase 8: UI/UX Enhancements
+## 🎯 Phase 7: UI/UX Enhancements
 
 **Priority**: MEDIUM  
 **Estimated Time**: 1-2 weeks  
@@ -1462,7 +1290,6 @@ fun PasteChip(
 [versions]
 camerax = "1.3.1"
 mlkit-text-recognition = "16.0.0"
-mlkit-digital-ink = "18.1.0"
 generativeai = "0.9.0"
 room = "2.6.1"
 
@@ -1475,7 +1302,6 @@ androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "
 
 # ML Kit
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkit-text-recognition" }
-mlkit-digital-ink = { module = "com.google.mlkit:digital-ink-recognition", version.ref = "mlkit-digital-ink" }
 
 # Gemini AI
 google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
@@ -1516,34 +1342,29 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 - Week 5: Translation integration, AR overlay
 - Week 6: Polish, performance optimization
 
-### Phase 3: Handwriting (Weeks 7-9)
-- Week 7: Drawing canvas, stroke capture
-- Week 8: ML Kit Digital Ink integration
-- Week 9: Translation integration, UI polish
+### Phase 3: Face-to-Face Mode (Weeks 7-8)
+- Week 7: Split screen layout, rotation handling
+- Week 8: Auto language detection, settings
 
-### Phase 4: Face-to-Face Mode (Weeks 10-11)
-- Week 10: Split screen layout, rotation handling
-- Week 11: Auto language detection, settings
+### Phase 4: AI Practice (Weeks 9-13)
+- Week 9: Gemini integration, onboarding
+- Week 10: Chat interface, scenario generation
+- Week 11: Progress tracking, database
+- Week 12-13: Polish, testing, beta rollout
 
-### Phase 5: AI Practice (Weeks 12-16)
-- Week 12: Gemini integration, onboarding
-- Week 13: Chat interface, scenario generation
-- Week 14: Progress tracking, database
-- Week 15-16: Polish, testing, beta rollout
+### Phase 5: Image Translation (Weeks 14-15)
+- Week 14: Image picker, OCR integration
+- Week 15: Image overlay, save/share
 
-### Phase 6: Image Translation (Weeks 17-18)
-- Week 17: Image picker, OCR integration
-- Week 18: Image overlay, save/share
+### Phase 6: Phrasebook (Weeks 16-17)
+- Week 16: Room database, CRUD operations
+- Week 17: Search, categories, quick save
 
-### Phase 7: Phrasebook (Weeks 19-20)
-- Week 19: Room database, CRUD operations
-- Week 20: Search, categories, quick save
+### Phase 7: UI/UX Polish (Weeks 18-19)
+- Week 18: Promotional cards, animations
+- Week 19: Final polish, bug fixes, testing
 
-### Phase 8: UI/UX Polish (Weeks 21-22)
-- Week 21: Promotional cards, animations
-- Week 22: Final polish, bug fixes, testing
-
-**Total Estimated Time: 22 weeks (5.5 months)**
+**Total Estimated Time: 19 weeks (~4.75 months)**
 
 ---
 
