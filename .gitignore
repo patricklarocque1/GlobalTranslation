@@ -1,14 +1,15 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Ignore most .idea files except for important shared ones
+.idea/*
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+!.idea/.gitignore
 .DS_Store
-/build
+# Ignore all build directories (root and module-level)
+build/
 /captures
 .externalNativeBuild
 .cxx
