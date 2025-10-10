@@ -23,4 +23,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "GlobalTranslation"
-include(":app")
+include(":app", ":core")
