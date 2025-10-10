@@ -335,7 +335,7 @@ kotlin {
 ```
 
 #### Application Class Not Found at Runtime
-**Error**: `ClassNotFoundException: com.example.gloabtranslation.GloabTranslationApplication`
+**Error**: `ClassNotFoundException: com.example.globaltranslation.GloabTranslationApplication`
 
 **Solution**: Ensure the `kotlin.android` plugin is present:
 ```kotlin

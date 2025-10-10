@@ -98,9 +98,9 @@ val ExpressiveTypography = Typography(
 - [ ] Test on different screen sizes
 
 ### Files to Create/Modify
-- `app/src/main/java/com/example/gloabtranslation/ui/theme/ExpressiveTheme.kt` (new)
-- `app/src/main/java/com/example/gloabtranslation/ui/theme/Color.kt` (update)
-- `app/src/main/java/com/example/gloabtranslation/ui/theme/Shape.kt` (new)
+- `app/src/main/java/com/example/globaltranslation/ui/theme/ExpressiveTheme.kt` (new)
+- `app/src/main/java/com/example/globaltranslation/ui/theme/Color.kt` (update)
+- `app/src/main/java/com/example/globaltranslation/ui/theme/Shape.kt` (new)
 - All screen files for consistent styling
 
 ---

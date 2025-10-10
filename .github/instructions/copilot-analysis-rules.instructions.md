@@ -19,7 +19,7 @@ These rules ensure thorough code analysis, proper context understanding, and mis
 ### Current Project Structure (All Implemented)
 
 ```
-app/src/main/java/com/example/gloabtranslation/
+app/src/main/java/com/example/globaltranslation/
 ├── MainActivity.kt                    # NavigationSuiteScaffold host
 ├── GloabTranslationApplication.kt     # @HiltAndroidApp
 ├── model/ConversationTurn.kt          # Data model for conversation history

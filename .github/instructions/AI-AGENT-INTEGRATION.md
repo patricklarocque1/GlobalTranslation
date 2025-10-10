@@ -8,6 +8,7 @@ This document explains how different instruction files work together to provide 
 **Purpose**: Quick reference and Cursor-specific rules  
 **Audience**: Cursor AI  
 **Focus**: 
+- Multi-module architecture structure
 - Immediate best practices
 - Critical build configuration
 - Common patterns used in this project

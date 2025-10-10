@@ -1,13 +1,13 @@
 # Project Plan: Global Translation App
 
 **App Name:** GlobalTranslation  
-**Template:** Android Studio "NavigationSuiteScaffold" (Adaptive Navigation)  
-**Architecture:** MVVM with Jetpack Compose + Single-Activity pattern  
-**Status:** ✅ **Phase 2 COMPLETED** - Camera Translation Live!
+**Architecture:** Multi-module clean architecture (:core, :data, :app)  
+**Pattern:** MVVM with Jetpack Compose + Single-Activity  
+**Status:** ✅ **Phase 2 + Architecture Refactoring COMPLETED**
 
 ## 🎯 **Implementation Status**
 
-This project has successfully transitioned from template to full-featured translation app. **Phase 2 (Camera Translation + Material3 Expressive Theme) now complete!**
+This project has successfully evolved from template to a full-featured translation app with **production-ready multi-module clean architecture**. Phase 2 (Camera Translation + Material3 Expressive Theme) and complete architecture refactoring now complete!
 
 ## ✅ 1. Template Transformation - COMPLETED
 
@@ -25,7 +25,8 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 
 ### Core Services Module ✅ COMPLETED
 
-**Package:** `com.example.gloabtranslation.services`
+**Package:** `com.example.globaltranslation.services`  
+**Note:** Services are being migrated to :data module providers
 
 #### ✅ TranslationService.kt - IMPLEMENTED
 
@@ -223,10 +224,27 @@ All ViewModels properly implement StateFlow best practices:
    - Dynamic language model status tracking
    - Async download status checking with proper loading states
 
-### Verified Project Structure
+### Multi-Module Architecture ✅ NEW
+
+**Refactoring Completed**: October 10, 2025
+
+The project now uses a 3-module clean architecture for better testability and maintainability:
 
 ```
-app/src/main/java/com/example/gloabtranslation/
+:core/ (Pure Kotlin)
+├── model/ (ConversationTurn)
+├── provider/ (5 interfaces)
+├── repository/ (ConversationRepository)
+└── util/ (TextBlockGroupingUtil + tests)
+
+:data/ (Android Library)
+├── provider/ (5 ML Kit & Android implementations)
+├── repository/ (RoomConversationRepository)
+├── local/ (Room database)
+└── di/ (Hilt modules)
+
+:app/ (Android App)
+app/src/main/java/com/example/globaltranslation/
 ├── GloabTranslationApplication.kt     # @HiltAndroidApp ✅
 ├── MainActivity.kt                    # @AndroidEntryPoint with NavigationSuiteScaffold ✅
 ├── model/
@@ -514,3 +532,70 @@ While the app is production-ready, these enhancements could be considered:
 - **Dependencies**: Current conversation mode, Material 3 theme
 - **Key Features**: Split-screen layout, auto language detection, rotated display
 - **Value**: Natural face-to-face conversations with the person opposite you
+
+---
+
+## 🏗️ **Architecture Refactoring - COMPLETED** (October 10, 2025)
+
+### Overview
+Transformed from single-module app to multi-module clean architecture for improved testability, maintainability, and future platform support (Wear OS).
+
+### Step 1: Package Name Fix ✅
+**Commit**: e5e6d90
+
+- Fixed package typo: `com.example.gloabtranslation` → `com.example.globaltranslation`
+- Updated 27 files (25 Kotlin + 2 Gradle)
+- Updated namespace, applicationId, and AndroidManifest
+- Build verified successful
+
+### Step 2: Create :core Module ✅
+**Commit**: a9ca9df
+
+Created pure Kotlin module with:
+- Domain model (ConversationTurn)
+- 5 provider interfaces (Translation, Speech, TTS, OCR, Camera)
+- ConversationRepository interface
+- TextBlockGroupingUtil (extracted business logic)
+- Unit tests (9 tests, 5 passing)
+- No Android dependencies for fast testing
+
+### Step 3: Create :data Module ✅
+**Commit**: aa5a050
+
+Created Android library module with:
+- 5 provider implementations using ML Kit and Android APIs
+- Room database (ConversationDatabase, DAO, entities)
+- RoomConversationRepository for persistence
+- Hilt modules (DataModule, ProviderModule)
+- Room 2.7.0-alpha11 (Kotlin 2.2.20 compatible)
+
+### Step 4: Refactor App & Tests ✅
+**Commit**: 0442229
+
+- Updated :app to depend on :core and :data
+- Added test infrastructure (Hilt Testing, Compose UI Testing)
+- Created instrumentation tests (CameraScreenTest, ConversationScreenTest)
+- Updated documentation (README, .cursorrules)
+- Verified full build pipeline works
+
+### Architecture Benefits Achieved
+- ✅ **Testability**: Pure Kotlin :core enables fast unit tests
+- ✅ **Separation of Concerns**: Clear module boundaries
+- ✅ **Reusability**: Ready for Wear OS module
+- ✅ **Build Performance**: Parallel module compilation
+- ✅ **Maintainability**: Enforced architecture boundaries
+
+### Module Dependency Graph
+```
+:app → :core, :data
+:data → :core
+:core → (no dependencies)
+```
+
+### Future Migration Path
+- Migrate ViewModels to use :data providers instead of legacy :app services
+- Enable conversation persistence via ConversationRepository
+- Remove legacy services from :app once migration complete
+- Add Wear OS module depending on :core and :data
+
+**See ARCHITECTURE_REFACTORING_SUMMARY.md for complete technical details**

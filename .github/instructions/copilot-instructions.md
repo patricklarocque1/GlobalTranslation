@@ -5,7 +5,7 @@ applyTo: '**/*'
 # Copilot Instructions for GlobalTranslation Android App
 
 ## Project Overview
-**COMPLETED** Android translation app using Jetpack Compose with ML Kit. All core features have been successfully implemented including live conversation translation, text input translation, and language management. The app has evolved from a navigation template to a fully functional translation application.
+**PRODUCTION-READY** Android translation app with **multi-module clean architecture** using Jetpack Compose and ML Kit. Core features complete: live conversation translation, text input translation, camera translation, and language management. Architecture refactored into :core, :data, and :app modules for optimal testability and maintainability.
 
 ## Critical Build Setup (MUST READ FIRST)
 
@@ -23,11 +23,33 @@ applyTo: '**/*'
 - **ML Kit**: Only translation (`mlkit-translate:17.0.3`) - speech recognition removed due to version conflicts
 - **Critical**: JVM target must match in both `compileOptions` and `kotlinOptions` to avoid compatibility errors
 
-## Current Architecture
+## Current Architecture - Multi-Module Clean Architecture
+
+### Module Structure ✅
+```
+:core (Pure Kotlin, no Android)
+├── model/ (ConversationTurn)
+├── provider/ (5 interfaces: Translation, Speech, TTS, OCR, Camera)
+├── repository/ (ConversationRepository)
+└── util/ (TextBlockGroupingUtil + tests)
+
+:data (Android Library)
+├── provider/ (ML Kit & Android implementations)
+├── repository/ (Room-based ConversationRepository)
+├── local/ (Room database, DAO, entities)
+└── di/ (Hilt modules: DataModule, ProviderModule)
+
+:app (Android App)
+├── ui/ (Compose screens + ViewModels)
+├── services/ (Legacy - being migrated to :data)
+└── navigation/ (NavigationSuiteScaffold)
+```
+
+**Package Name**: `com.example.globaltranslation` (fixed from gloabtranslation)
 
 ### Navigation Structure
 - **Single Activity**: `MainActivity.kt` with `NavigationSuiteScaffold`
-- **Destinations**: Defined in `AppDestinations` enum (CONVERSATION, TEXT_INPUT, LANGUAGES)
+- **Destinations**: Defined in `AppDestinations` enum (CONVERSATION, TEXT_INPUT, CAMERA, LANGUAGES)
 - **Adaptive UI**: Uses Material3 adaptive navigation suite for different screen sizes
 - **Current state**: ✅ All screens fully implemented and functional
 
@@ -35,24 +57,27 @@ applyTo: '**/*'
 ```kotlin
 // Application class configured
 @HiltAndroidApp
-class GloabTranslationApplication : Application()
+class GloabTranslationApplication : Application()  // Note: Class name unchanged for backward compatibility
 
 // MainActivity is Hilt-enabled
 @AndroidEntryPoint
 class MainActivity : ComponentActivity()
 
-// All services properly injected via ServicesModule
+// Providers available via :data module
+// Legacy services in :app (being migrated)
 ```
 
-## ✅ Current Architecture - FULLY IMPLEMENTED
+## ✅ Implemented Features - FULLY FUNCTIONAL
 
-### Implemented Package Structure
+### Package Structure (in :app module)
 All features have been successfully implemented:
-- `services/` - ✅ Translation, SpeechRecognition, TTS services + ServicesModule
+- `services/` - ✅ Translation, SpeechRecognition, TTS, TextRecognition, CameraTranslation + ServicesModule
 - `ui/conversation/` - ✅ Live conversation translation with voice I/O
 - `ui/textinput/` - ✅ Manual text translation with history management
+- `ui/camera/` - ✅ Real-time OCR translation with CameraX
 - `ui/languages/` - ✅ ML Kit model download and management
 - `ui/components/` - ✅ Reusable LanguagePicker dialog and button components
+- `ui/theme/` - ✅ Material3 Expressive Theme (lavender/purple palette)
 
 ### Key Implementation Patterns (When Building Features)
 
@@ -188,7 +213,7 @@ data class ConversationUiState(
 
 ### Build System
 - **Kotlin DSL**: All build files use `.gradle.kts` format
-- **Namespace**: `com.example.gloabtranslation` (note: should be updated from "gloabtranslation" typo)
+- **Namespace**: `com.example.globaltranslation` (typo fixed in architecture refactoring)
 - **Target SDK**: 36 (latest Android)
 - **Min SDK**: 29 (Android 10+)
 - **Plugin Configuration**: All plugins properly declared in `app/build.gradle.kts`:

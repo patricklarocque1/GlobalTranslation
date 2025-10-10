@@ -1,5 +1,14 @@
 # GlobalTranslation Quick Reference Card
 
+## 🏗️ Architecture
+
+**Multi-Module Clean Architecture** (3 modules):
+- `:core` - Pure Kotlin, domain models, interfaces
+- `:data` - Android Library, Room + ML Kit implementations
+- `:app` - Android App, Compose UI + ViewModels
+
+**Package**: `com.example.globaltranslation`
+
 ## 🚀 Essential Build Info
 
 ```kotlin
@@ -126,13 +135,26 @@ fun MyComponent(
 
 ## 📁 Project Structure
 
+### Multi-Module Layout
 ```
-app/src/main/java/com/example/gloabtranslation/
+:core/src/main/kotlin/com/example/globaltranslation/core/
+├── model/ (ConversationTurn)
+├── provider/ (5 interfaces)
+├── repository/ (ConversationRepository)
+└── util/ (TextBlockGroupingUtil)
+
+:data/src/main/kotlin/com/example/globaltranslation/data/
+├── provider/ (ML Kit implementations)
+├── repository/ (Room-based)
+├── local/ (Room database)
+└── di/ (Hilt modules)
+
+:app/src/main/java/com/example/globaltranslation/
 ├── GloabTranslationApplication.kt    # @HiltAndroidApp
 ├── MainActivity.kt                   # @AndroidEntryPoint
 ├── model/
-│   └── ConversationTurn.kt
-├── services/                         # @Singleton + @Inject
+│   └── ConversationTurn.kt (typealias to :core)
+├── services/                         # @Singleton + @Inject (being migrated)
 │   ├── ServicesModule.kt
 │   ├── TranslationService.kt
 │   ├── SpeechRecognitionService.kt
@@ -297,12 +319,14 @@ data class MyUiState(
 
 ## 📱 App Info
 
-- **Package**: `com.example.gloabtranslation`
+- **Package**: `com.example.globaltranslation`
+- **Architecture**: Multi-module (:core, :data, :app)
 - **Min SDK**: 29 (Android 10)
 - **Target SDK**: 36
-- **3 Screens**: Conversation, Text Input, Languages
-- **3 ViewModels**: All use StateFlow pattern + TTS injection
-- **4 Services**: All use Hilt @Singleton
+- **4 Screens**: Conversation, Text Input, Camera, Languages
+- **4 ViewModels**: All use StateFlow pattern
+- **Persistence**: Room database in :data module
+- **Services**: Legacy in :app, new providers in :data
 - **Features**: Translation, TTS, Clipboard, Model Management
 
 ## 🔍 ML Kit Translation Gotchas
