@@ -1,15 +1,18 @@
 # Cursor AI Rules for GlobalTranslation Android App
 
 ## Project Context
-This is a **PRODUCTION-READY** Android translation app built with Jetpack Compose and ML Kit. **Phase 2 (Camera Translation) now complete!** The codebase follows Android best practices for 2025.
+This is a **PRODUCTION-READY** Android translation app built with Jetpack Compose and ML Kit. **Multi-module clean architecture complete!** The codebase follows Android best practices for 2025 with proper separation of concerns.
 
 ## Core Technologies (Verified)
 - **Build**: AGP 8.13.0, Kotlin 2.2.20, KSP 2.2.20-2.0.2, Hilt 2.57.2
-- **Architecture**: MVVM with StateFlow, Hilt DI, Jetpack Compose
+- **Architecture**: Multi-module clean architecture (:core, :data, :app)
+- **Pattern**: MVVM with StateFlow, Hilt DI, Jetpack Compose
 - **UI**: Material3 Expressive Theme (lavender/purple palette, large corner radii)
 - **Translation**: ML Kit Translate API with offline model management
+- **Persistence**: Room 2.7.0-alpha11 for conversation history
 - **Camera**: CameraX 1.3.1 with ML Kit Text Recognition for OCR
 - **Min/Target SDK**: 29/36, JVM Target: 11
+- **Package**: com.example.globaltranslation (fixed typo from gloabtranslation)
 
 ## Critical Build Rules
 
@@ -91,10 +94,34 @@ val uiState: StateFlow<MyUiState> = _uiState  // Missing immutability
 // Missing onCleared() when using services
 ```
 
+## Multi-Module Architecture
+
+The project uses a 3-module clean architecture:
+
+### :core Module (Pure Kotlin)
+- Domain models (ConversationTurn)
+- Provider interfaces (TranslationProvider, SpeechProvider, etc.)
+- Repository interfaces (ConversationRepository)
+- Business logic utilities (TextBlockGroupingUtil)
+- No Android dependencies - fast unit testing
+
+### :data Module (Android Library)
+- Provider implementations (MlKitTranslationProvider, AndroidSpeechProvider, etc.)
+- Room database (ConversationDatabase, DAO, entities)
+- Repository implementations (RoomConversationRepository)
+- Hilt modules for DI (DataModule, ProviderModule)
+
+### :app Module (Android App)
+- Compose UI screens and components
+- ViewModels with StateFlow
+- Navigation (NavigationSuiteScaffold)
+- Material3 Expressive Theme
+- Legacy services (currently being migrated to :data providers)
+
 ## Verified Project Structure
 
 ```
-app/src/main/java/com/example/gloabtranslation/
+app/src/main/java/com/example/globaltranslation/
 ├── GloabTranslationApplication.kt     # @HiltAndroidApp
 ├── MainActivity.kt                    # @AndroidEntryPoint + NavigationSuiteScaffold
 ├── model/

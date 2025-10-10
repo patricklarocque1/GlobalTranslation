@@ -1,6 +1,6 @@
 # GlobalTranslation
 
-An Android translation app built with Jetpack Compose and ML Kit. **Now feature-complete** with live conversation translation, text input translation, and language management capabilities.
+An Android translation app built with Jetpack Compose and ML Kit. **Multi-module clean architecture** with live conversation translation, camera translation, and language management capabilities.
 
 ## 🚀 Features
 
@@ -30,15 +30,18 @@ An Android translation app built with Jetpack Compose and ML Kit. **Now feature-
 
 ## 🛠️ Tech Stack
 
+- **Architecture**: Multi-module clean architecture (:core, :data, :app)
 - **UI**: Jetpack Compose with Material3 Expressive Theme and adaptive navigation
-- **Architecture**: MVVM with StateFlow and Hilt dependency injection
+- **Pattern**: MVVM with StateFlow and Hilt dependency injection
 - **Translation**: ML Kit Translate API with offline model management
+- **Persistence**: Room database for conversation history
 - **Camera**: CameraX for preview and image analysis
 - **OCR**: ML Kit Text Recognition v2 for camera text detection
 - **Speech**: Android SpeechRecognizer + TextToSpeech integration
 - **Navigation**: NavigationSuiteScaffold (adaptive for phone/tablet/desktop)
 - **Build**: Gradle with Version Catalogs and KSP
 - **Permissions**: Runtime permission handling with Accompanist Permissions
+- **Testing**: JUnit + Hilt Testing + Compose UI Testing
 
 ## 🔧 Build Requirements
 
@@ -104,44 +107,45 @@ kotlin {
    .\gradlew installDebug
    ```
 
-## 📁 Project Structure (Verified)
+## 📁 Multi-Module Project Structure
+
+**New Architecture**: Clean separation into :core (domain), :data (implementation), :app (UI)
 
 ```text
-app/src/main/java/com/example/gloabtranslation/
-├── GloabTranslationApplication.kt     # @HiltAndroidApp ✅
-├── MainActivity.kt                    # @AndroidEntryPoint with NavigationSuiteScaffold ✅
-├── model/
-│   └── ConversationTurn.kt           # Data model for conversation history ✅
-├── services/                         # All @Singleton with @Inject ✅
-│   ├── ServicesModule.kt             # Hilt dependency injection module ✅
-│   ├── TranslationService.kt         # ML Kit translation + model management ✅
-│   ├── SpeechRecognitionService.kt   # Android SpeechRecognizer wrapper ✅
-│   ├── TextToSpeechService.kt        # TTS service with language support ✅
-│   ├── TextRecognitionService.kt     # ML Kit Text Recognition (OCR) ✅ NEW
-│   └── CameraTranslationService.kt   # Combined OCR + Translation ✅ NEW
-├── ui/
-│   ├── components/
-│   │   └── LanguagePicker.kt         # Reusable language dialog/button ✅
-│   ├── conversation/                 # Live conversation translation ✅
-│   │   ├── ConversationScreen.kt     # Voice translation UI + permissions ✅
-│   │   └── ConversationViewModel.kt  # @HiltViewModel with StateFlow ✅
-│   ├── textinput/                    # Manual text translation ✅
-│   │   ├── TextInputScreen.kt        # Text input UI with history ✅
-│   │   └── TextInputViewModel.kt     # @HiltViewModel with StateFlow ✅
-│   ├── camera/                       # Camera translation (AR overlay) ✅ NEW
-│   │   ├── CameraScreen.kt           # Camera preview + OCR translation ✅
-│   │   └── CameraViewModel.kt        # @HiltViewModel with StateFlow ✅
-│   ├── languages/                    # ML Kit model management ✅
-│   │   ├── LanguageScreen.kt         # Model download/status UI ✅
-│   │   └── LanguageViewModel.kt      # @HiltViewModel with StateFlow ✅
-│   └── theme/                        # Material3 Expressive Theme ✅
-│       ├── Color.kt
-│       ├── Theme.kt
-│       ├── Type.kt
-│       ├── ExpressiveColors.kt       # Lavender/purple palette ✅ NEW
-│       ├── ExpressiveShapes.kt       # Large corner radii ✅ NEW
-│       └── ExpressiveTypography.kt   # (Future) ✅ NEW
+GlobalTranslation/
+├── :core (Pure Kotlin) ✅ NEW
+│   Domain models, interfaces, and business logic
+│   - ConversationTurn model
+│   - Provider interfaces (Translation, Speech, TTS, OCR, Camera)
+│   - ConversationRepository interface
+│   - TextBlockGroupingUtil + unit tests
+│
+├── :data (Android Library) ✅ NEW
+│   Data layer with Room persistence and ML Kit implementations
+│   - Provider implementations (ML Kit, Android APIs)
+│   - Room database (ConversationDatabase, DAO, entities)
+│   - RoomConversationRepository
+│   - Hilt modules (DataModule, ProviderModule)
+│
+└── :app (Android App)
+    UI layer with Compose screens and ViewModels
+    - MainActivity with NavigationSuiteScaffold
+    - 4 feature screens (Conversation, Text Input, Camera, Languages)
+    - Legacy services (being migrated to :data providers)
+    - Material3 Expressive Theme
 ```
+
+### Module Dependencies
+- `:app` depends on `:core` and `:data`
+- `:data` depends on `:core`
+- `:core` has no dependencies (pure Kotlin)
+
+### Benefits of Multi-Module Architecture
+- **Testability**: Pure Kotlin :core module enables fast unit tests
+- **Separation of Concerns**: Clear boundaries between domain, data, and UI
+- **Reusability**: :core and :data can be shared with Wear OS or other platforms
+- **Build Performance**: Parallel module compilation
+- **Maintainability**: Enforced architecture through module boundaries
 
 ### Architecture Highlights
 
