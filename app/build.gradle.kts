@@ -63,16 +63,15 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     
-    // ML Kit dependencies (still needed for existing services in :app)
-    implementation(libs.mlkit.translate)
-    implementation(libs.mlkit.text.recognition)
-    implementation(libs.kotlinx.coroutines.play.services)
-    
-    // CameraX dependencies
+    // CameraX dependencies (still used directly in CameraScreen for preview)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    
+    // ML Kit (for TranslateLanguage constants used in UI and InputImage for camera)
+    implementation(libs.mlkit.translate)
+    implementation(libs.mlkit.text.recognition)
     
     // Permissions helper
     implementation(libs.accompanist.permissions)

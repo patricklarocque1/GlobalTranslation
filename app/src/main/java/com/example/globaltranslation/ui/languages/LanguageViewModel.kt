@@ -2,7 +2,7 @@ package com.example.globaltranslation.ui.languages
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.globaltranslation.services.TranslationService
+import com.example.globaltranslation.core.provider.TranslationProvider
 import com.google.mlkit.nl.translate.TranslateLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +13,11 @@ import javax.inject.Inject
 
 /**
  * ViewModel for managing translation language models.
+ * Migrated to use :data providers for clean architecture.
  */
 @HiltViewModel
 class LanguageViewModel @Inject constructor(
-    private val translationService: TranslationService
+    private val translationProvider: TranslationProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LanguageUiState())
@@ -59,7 +60,7 @@ class LanguageViewModel @Inject constructor(
                     language.copy(isDownloaded = true)
                 } else {
                     try {
-                        val isDownloaded = translationService.areModelsDownloaded(
+                        val isDownloaded = translationProvider.areModelsDownloaded(
                             TranslateLanguage.ENGLISH,
                             language.code
                         )
@@ -93,7 +94,7 @@ class LanguageViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                val result = translationService.downloadModels(
+                val result = translationProvider.downloadModels(
                     TranslateLanguage.ENGLISH,
                     languageCode
                 )
@@ -141,7 +142,7 @@ class LanguageViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                val result = translationService.deleteModel(languageCode)
+                val result = translationProvider.deleteModel(languageCode)
                 
                 result.fold(
                     onSuccess = {

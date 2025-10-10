@@ -2,36 +2,29 @@ package com.example.globaltranslation.ui.textinput
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.globaltranslation.core.provider.TextToSpeechProvider
+import com.example.globaltranslation.core.provider.TranslationProvider
 import com.example.globaltranslation.model.ConversationTurn
-import com.example.globaltranslation.services.TextToSpeechService
-import com.example.globaltranslation.services.TranslationService
 import com.google.mlkit.nl.translate.TranslateLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
 
 /**
  * ViewModel for the text input screen, managing manual text translation.
+ * Migrated to use :data providers for clean architecture.
  */
 @HiltViewModel
 class TextInputViewModel @Inject constructor(
-    private val translationService: TranslationService,
-    private val ttsService: TextToSpeechService
+    private val translationProvider: TranslationProvider,
+    private val ttsProvider: TextToSpeechProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TextInputUiState())
     val uiState: StateFlow<TextInputUiState> = _uiState.asStateFlow()
-    
-    init {
-        // Initialize TTS service
-        viewModelScope.launch {
-            ttsService.initialize()
-        }
-    }
 
     /**
      * Updates the input text as user types.
@@ -59,10 +52,10 @@ class TextInputViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val result = translationService.translate(
+                val result = translationProvider.translate(
                     text = textToTranslate,
-                    fromLanguage = currentState.sourceLanguage,
-                    toLanguage = currentState.targetLanguage
+                    from = currentState.sourceLanguage,
+                    to = currentState.targetLanguage
                 )
 
                 result.fold(
@@ -164,47 +157,16 @@ class TextInputViewModel @Inject constructor(
      * Speaks the given text using text-to-speech.
      */
     fun speakText(text: String, languageCode: String) {
-        val locale = getLocaleFromLanguageCode(languageCode)
-        
         viewModelScope.launch {
-            ttsService.speak(text, locale).collect { event ->
+            ttsProvider.speak(text, languageCode).collect { event ->
                 // Handle TTS events if needed (e.g., show speaking indicator)
             }
         }
     }
     
-    /**
-     * Converts ML Kit language code to Locale.
-     */
-    private fun getLocaleFromLanguageCode(languageCode: String): Locale {
-        return when (languageCode) {
-            TranslateLanguage.ENGLISH -> Locale.forLanguageTag("en")
-            TranslateLanguage.SPANISH -> Locale.forLanguageTag("es")
-            TranslateLanguage.FRENCH -> Locale.forLanguageTag("fr")
-            TranslateLanguage.GERMAN -> Locale.forLanguageTag("de")
-            TranslateLanguage.ITALIAN -> Locale.forLanguageTag("it")
-            TranslateLanguage.PORTUGUESE -> Locale.forLanguageTag("pt")
-            TranslateLanguage.CHINESE -> Locale.forLanguageTag("zh")
-            TranslateLanguage.JAPANESE -> Locale.forLanguageTag("ja")
-            TranslateLanguage.KOREAN -> Locale.forLanguageTag("ko")
-            TranslateLanguage.RUSSIAN -> Locale.forLanguageTag("ru")
-            TranslateLanguage.ARABIC -> Locale.forLanguageTag("ar")
-            TranslateLanguage.HINDI -> Locale.forLanguageTag("hi")
-            TranslateLanguage.DUTCH -> Locale.forLanguageTag("nl")
-            TranslateLanguage.POLISH -> Locale.forLanguageTag("pl")
-            TranslateLanguage.TURKISH -> Locale.forLanguageTag("tr")
-            TranslateLanguage.SWEDISH -> Locale.forLanguageTag("sv")
-            TranslateLanguage.NORWEGIAN -> Locale.forLanguageTag("no")
-            TranslateLanguage.DANISH -> Locale.forLanguageTag("da")
-            TranslateLanguage.FINNISH -> Locale.forLanguageTag("fi")
-            TranslateLanguage.GREEK -> Locale.forLanguageTag("el")
-            else -> Locale.forLanguageTag(languageCode)
-        }
-    }
-    
     override fun onCleared() {
         super.onCleared()
-        ttsService.cleanup()
+        ttsProvider.cleanup()
     }
 }
 

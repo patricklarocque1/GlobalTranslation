@@ -1,12 +1,9 @@
 package com.example.globaltranslation.ui.camera
 
-import android.graphics.Bitmap
 import android.graphics.Rect
-import androidx.camera.core.ImageProxy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.globaltranslation.services.CameraTranslationService
-import com.example.globaltranslation.services.TranslatedTextBlock
+import com.example.globaltranslation.core.provider.CameraTranslationProvider
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,10 +16,11 @@ import javax.inject.Inject
 /**
  * ViewModel for camera translation screen.
  * Manages camera state, text recognition, and translation.
+ * Migrated to use :data providers for clean architecture.
  */
 @HiltViewModel
 class CameraViewModel @Inject constructor(
-    private val cameraTranslationService: CameraTranslationService
+    private val cameraTranslationProvider: CameraTranslationProvider
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(CameraUiState())
@@ -99,9 +97,9 @@ class CameraViewModel @Inject constructor(
                     error = null
                 )
                 
-                // Process the captured image
-                val result = cameraTranslationService.processImage(
-                    image = inputImage,
+                // Process the captured image using provider
+                val result = cameraTranslationProvider.processImage(
+                    imageData = inputImage,
                     sourceLanguage = _uiState.value.sourceLanguageCode,
                     targetLanguage = _uiState.value.targetLanguageCode
                 )
@@ -112,7 +110,12 @@ class CameraViewModel @Inject constructor(
                             DetectedTextBlock(
                                 originalText = block.originalText,
                                 translatedText = block.translatedText,
-                                boundingBox = block.boundingBox
+                                boundingBox = Rect(
+                                    block.boundingBox.left,
+                                    block.boundingBox.top,
+                                    block.boundingBox.right,
+                                    block.boundingBox.bottom
+                                )
                             )
                         }
                         

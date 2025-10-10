@@ -2,40 +2,36 @@ package com.example.globaltranslation.ui.conversation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.globaltranslation.core.provider.SpeechProvider
+import com.example.globaltranslation.core.provider.SpeechResult
+import com.example.globaltranslation.core.provider.TextToSpeechProvider
+import com.example.globaltranslation.core.provider.TranslationProvider
+import com.example.globaltranslation.core.provider.TtsEvent
+import com.example.globaltranslation.core.repository.ConversationRepository
 import com.example.globaltranslation.model.ConversationTurn
-import com.example.globaltranslation.services.SpeechRecognitionResult
-import com.example.globaltranslation.services.SpeechRecognitionService
-import com.example.globaltranslation.services.SpeechEvent
-import com.example.globaltranslation.services.TextToSpeechService
-import com.example.globaltranslation.services.TranslationService
 import com.google.mlkit.nl.translate.TranslateLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
 
 /**
  * ViewModel for the conversation screen, managing live translation conversation state.
+ * Migrated to use :data providers for clean architecture.
+ * Includes optional conversation persistence via ConversationRepository.
  */
 @HiltViewModel
 class ConversationViewModel @Inject constructor(
-    private val translationService: TranslationService,
-    private val speechRecognitionService: SpeechRecognitionService,
-    private val textToSpeechService: TextToSpeechService
+    private val translationProvider: TranslationProvider,
+    private val speechProvider: SpeechProvider,
+    private val ttsProvider: TextToSpeechProvider,
+    private val conversationRepository: ConversationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConversationUiState())
     val uiState: StateFlow<ConversationUiState> = _uiState.asStateFlow()
-
-    init {
-        // Initialize TTS service
-        viewModelScope.launch {
-            textToSpeechService.initialize()
-        }
-    }
 
     /**
      * Starts listening for speech input in the specified language.
@@ -49,36 +45,32 @@ class ConversationViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val locale = getLocaleFromLanguageCode(forLanguage)
+            val languageCode = getLanguageCodeForSpeech(forLanguage)
             
-            speechRecognitionService.startListening(locale).collect { result ->
+            speechProvider.startListening(languageCode).collect { result ->
                 when (result) {
-                    is SpeechRecognitionResult.ReadyForSpeech -> {
-                        _uiState.value = _uiState.value.copy(isListeningReady = true)
+                    is SpeechResult.ReadyForSpeech -> {
+                        _uiState.value = _uiState.value.copy(
+                            isListeningReady = true,
+                            isDetectingSpeech = true
+                        )
                     }
                     
-                    is SpeechRecognitionResult.BeginningOfSpeech -> {
-                        _uiState.value = _uiState.value.copy(isDetectingSpeech = true)
-                    }
-                    
-                    is SpeechRecognitionResult.PartialResults -> {
+                    is SpeechResult.PartialResult -> {
                         _uiState.value = _uiState.value.copy(partialSpeechText = result.text)
                     }
                     
-                    is SpeechRecognitionResult.Results -> {
-                        if (result.matches.isNotEmpty()) {
-                            val recognizedText = result.matches.first().text
-                            _uiState.value = _uiState.value.copy(
-                                isListening = false,
-                                isListeningReady = false,
-                                isDetectingSpeech = false,
-                                partialSpeechText = ""
-                            )
-                            translateAndAddToConversation(recognizedText, forLanguage)
-                        }
+                    is SpeechResult.FinalResult -> {
+                        _uiState.value = _uiState.value.copy(
+                            isListening = false,
+                            isListeningReady = false,
+                            isDetectingSpeech = false,
+                            partialSpeechText = ""
+                        )
+                        translateAndAddToConversation(result.text, forLanguage)
                     }
                     
-                    is SpeechRecognitionResult.Error -> {
+                    is SpeechResult.Error -> {
                         _uiState.value = _uiState.value.copy(
                             isListening = false,
                             isListeningReady = false,
@@ -88,7 +80,9 @@ class ConversationViewModel @Inject constructor(
                         )
                     }
                     
-                    else -> { /* Handle other events if needed */ }
+                    is SpeechResult.EndOfSpeech -> {
+                        _uiState.value = _uiState.value.copy(isDetectingSpeech = false)
+                    }
                 }
             }
         }
@@ -98,7 +92,7 @@ class ConversationViewModel @Inject constructor(
      * Stops the current speech recognition session.
      */
     fun stopListening() {
-        speechRecognitionService.stopListening()
+        speechProvider.stopListening()
         _uiState.value = _uiState.value.copy(
             isListening = false,
             isListeningReady = false,
@@ -117,7 +111,7 @@ class ConversationViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val result = translationService.translate(text, sourceLanguage, targetLanguage)
+                val result = translationProvider.translate(text, sourceLanguage, targetLanguage)
                 
                 result.fold(
                     onSuccess = { translatedText ->
@@ -133,6 +127,14 @@ class ConversationViewModel @Inject constructor(
                             conversationHistory = updatedConversation,
                             isTranslating = false
                         )
+                        
+                        // Persist the conversation turn (optional feature)
+                        try {
+                            conversationRepository.saveConversation(turn)
+                        } catch (e: Exception) {
+                            // Persistence failure doesn't break the UI
+                            // Could log this for debugging
+                        }
                         
                         // Optionally speak the translation
                         if (_uiState.value.autoPlayTranslation) {
@@ -159,24 +161,21 @@ class ConversationViewModel @Inject constructor(
      * Speaks the given text using TTS.
      */
     fun speakText(text: String, languageCode: String) {
-        val locale = getLocaleFromLanguageCode(languageCode)
-        
         viewModelScope.launch {
-            textToSpeechService.speak(text, locale).collect { event ->
+            ttsProvider.speak(text, languageCode).collect { event ->
                 when (event) {
-                    is SpeechEvent.Started -> {
+                    is TtsEvent.Started -> {
                         _uiState.value = _uiState.value.copy(isSpeaking = true)
                     }
-                    is SpeechEvent.Completed -> {
+                    is TtsEvent.Completed -> {
                         _uiState.value = _uiState.value.copy(isSpeaking = false)
                     }
-                    is SpeechEvent.Error -> {
+                    is TtsEvent.Error -> {
                         _uiState.value = _uiState.value.copy(
                             isSpeaking = false,
                             error = "TTS error: ${event.message}"
                         )
                     }
-                    else -> { /* Handle other events if needed */ }
                 }
             }
         }
@@ -222,6 +221,15 @@ class ConversationViewModel @Inject constructor(
      */
     fun clearConversation() {
         _uiState.value = _uiState.value.copy(conversationHistory = emptyList())
+        
+        // Also clear persisted conversations
+        viewModelScope.launch {
+            try {
+                conversationRepository.clearAll()
+            } catch (e: Exception) {
+                // Persistence failure doesn't break the UI
+            }
+        }
     }
 
     /**
@@ -239,28 +247,32 @@ class ConversationViewModel @Inject constructor(
         }
     }
 
-    private fun getLocaleFromLanguageCode(languageCode: String): Locale {
+    /**
+     * Converts ML Kit language code to language tag for speech recognition.
+     * Speech recognition expects locale tags like "en-US", "es-ES", etc.
+     */
+    private fun getLanguageCodeForSpeech(languageCode: String): String {
         return when (languageCode) {
-            TranslateLanguage.ENGLISH -> Locale.ENGLISH
-            TranslateLanguage.SPANISH -> Locale.forLanguageTag("es")
-            TranslateLanguage.FRENCH -> Locale.FRENCH
-            TranslateLanguage.GERMAN -> Locale.GERMAN
-            TranslateLanguage.ITALIAN -> Locale.ITALIAN
-            TranslateLanguage.PORTUGUESE -> Locale.forLanguageTag("pt")
-            TranslateLanguage.CHINESE -> Locale.CHINESE
-            TranslateLanguage.JAPANESE -> Locale.JAPANESE
-            TranslateLanguage.KOREAN -> Locale.KOREAN
-            TranslateLanguage.RUSSIAN -> Locale.forLanguageTag("ru")
-            TranslateLanguage.ARABIC -> Locale.forLanguageTag("ar")
-            TranslateLanguage.HINDI -> Locale.forLanguageTag("hi")
-            else -> Locale.getDefault()
+            TranslateLanguage.ENGLISH -> "en-US"
+            TranslateLanguage.SPANISH -> "es-ES"
+            TranslateLanguage.FRENCH -> "fr-FR"
+            TranslateLanguage.GERMAN -> "de-DE"
+            TranslateLanguage.ITALIAN -> "it-IT"
+            TranslateLanguage.PORTUGUESE -> "pt-PT"
+            TranslateLanguage.CHINESE -> "zh-CN"
+            TranslateLanguage.JAPANESE -> "ja-JP"
+            TranslateLanguage.KOREAN -> "ko-KR"
+            TranslateLanguage.RUSSIAN -> "ru-RU"
+            TranslateLanguage.ARABIC -> "ar-SA"
+            TranslateLanguage.HINDI -> "hi-IN"
+            else -> "en-US"
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        speechRecognitionService.cleanup()
-        textToSpeechService.cleanup()
+        speechProvider.cleanup()
+        ttsProvider.cleanup()
     }
 }
 
