@@ -80,15 +80,29 @@ class GloabTranslationApplication : Application()
 @AndroidEntryPoint
 class MainActivity : ComponentActivity()
 
-// Service
-@Singleton
-class MyService @Inject constructor() {
-    fun cleanup() { /* cleanup */ }
+// Provider Interface (:core module)
+interface TranslationProvider {
+    suspend fun translate(text: String, from: String, to: String): Result<String>
+    fun cleanup()
 }
 
-// ViewModel (see StateFlow pattern above)
+// Provider Implementation (:data module)
+@Singleton
+class MlKitTranslationProvider @Inject constructor() : TranslationProvider {
+    override suspend fun translate(...) = Result.success("translated")
+    override fun cleanup() { /* cleanup */ }
+}
+
+// Hilt Binding (:data/di/ProviderModule.kt)
+@Binds
+@Singleton
+abstract fun bindTranslationProvider(impl: MlKitTranslationProvider): TranslationProvider
+
+// ViewModel (:app module) - depends on interface only
 @HiltViewModel
-class MyViewModel @Inject constructor(...)
+class MyViewModel @Inject constructor(
+    private val translationProvider: TranslationProvider
+) : ViewModel()
 
 // In Composable
 @Composable
@@ -153,25 +167,23 @@ fun MyComponent(
 ├── GloabTranslationApplication.kt    # @HiltAndroidApp
 ├── MainActivity.kt                   # @AndroidEntryPoint
 ├── model/
-│   └── ConversationTurn.kt (typealias to :core)
-├── services/                         # @Singleton + @Inject (being migrated)
-│   ├── ServicesModule.kt
-│   ├── TranslationService.kt
-│   ├── SpeechRecognitionService.kt
-│   └── TextToSpeechService.kt
+│   └── ConversationTurn.kt          # Typealias to :core
 └── ui/
     ├── components/
-    │   └── LanguagePicker.kt
-    ├── conversation/                 # @HiltViewModel + StateFlow
+    │   └── LanguagePicker.kt         # Reusable components
+    ├── conversation/                 # @HiltViewModel + providers
     │   ├── ConversationScreen.kt
     │   └── ConversationViewModel.kt
-    ├── textinput/                    # @HiltViewModel + StateFlow
+    ├── textinput/                    # @HiltViewModel + providers
     │   ├── TextInputScreen.kt
     │   └── TextInputViewModel.kt
-    ├── languages/                    # @HiltViewModel + StateFlow
+    ├── camera/                       # @HiltViewModel + providers
+    │   ├── CameraScreen.kt
+    │   └── CameraViewModel.kt
+    ├── languages/                    # @HiltViewModel + providers
     │   ├── LanguageScreen.kt
     │   └── LanguageViewModel.kt
-    └── theme/
+    └── theme/                        # Material3 theme
 ```
 
 ## ❌ Common Mistakes
@@ -186,11 +198,17 @@ val uiState: StateFlow<MyUiState> = _uiState
 // ❌ DON'T forget cleanup
 // Missing onCleared() override
 
-// ❌ DON'T call services from Composables
+// ❌ DON'T call providers from Composables
 @Composable
-fun MyScreen(service: MyService) {  // Wrong!
-    service.doSomething()  // Use ViewModel instead
+fun MyScreen(provider: TranslationProvider) {  // Wrong!
+    provider.translate(...)  // Use ViewModel instead
 }
+
+// ❌ DON'T depend on :data implementations in :app
+@HiltViewModel
+class MyViewModel @Inject constructor(
+    private val mlKitProvider: MlKitTranslationProvider  // Wrong! Use interface
+)
 
 // ❌ DON'T use LiveData
 val uiState: LiveData<MyUiState>  // Use StateFlow
@@ -223,11 +241,18 @@ plugins {
 private val _uiState = MutableStateFlow(MyUiState())
 val uiState: StateFlow<MyUiState> = _uiState.asStateFlow()
 
-// ✅ DO clean up resources
+// ✅ DO clean up providers
 override fun onCleared() {
     super.onCleared()
-    service.cleanup()
+    translationProvider.cleanup()
+    speechProvider.cleanup()
 }
+
+// ✅ DO inject interfaces not implementations
+@HiltViewModel
+class MyViewModel @Inject constructor(
+    private val translationProvider: TranslationProvider  // Interface from :core
+) : ViewModel()
 
 // ✅ DO use ViewModels in Composables
 @Composable
@@ -325,15 +350,16 @@ data class MyUiState(
 - **Target SDK**: 36
 - **4 Screens**: Conversation, Text Input, Camera, Languages
 - **4 ViewModels**: All use StateFlow pattern
-- **Persistence**: Room database in :data module
-- **Services**: Legacy in :app, new providers in :data
+- **Persistence**: Room database in :data module  
+- **Providers**: All in :data module (ML Kit + Android implementations)
 - **Features**: Translation, TTS, Clipboard, Model Management
 
 ## 🔍 ML Kit Translation Gotchas
 
 ```kotlin
-// ✅ CORRECT: Check download status without downloading
-suspend fun areModelsDownloaded(from: String, to: String): Boolean {
+// ✅ CORRECT: MlKitTranslationProvider checks without downloading
+// (in :data module implementation)
+override suspend fun areModelsDownloaded(from: String, to: String): Boolean {
     val modelManager = RemoteModelManager.getInstance()
     val fromModel = TranslateRemoteModel.Builder(from).build()
     val toModel = TranslateRemoteModel.Builder(to).build()
@@ -342,7 +368,7 @@ suspend fun areModelsDownloaded(from: String, to: String): Boolean {
 }
 
 // ❌ WRONG: Checking by attempting translation
-suspend fun areModelsDownloaded(from: String, to: String): Boolean {
+override suspend fun areModelsDownloaded(from: String, to: String): Boolean {
     translator.translate("test").await()  // This downloads models!
     return true
 }
@@ -350,11 +376,12 @@ suspend fun areModelsDownloaded(from: String, to: String): Boolean {
 
 **Critical ML Kit Behaviors:**
 - First-time downloads **require WiFi** (enforced by DownloadConditions)
-- `translate()` auto-downloads models if missing
-- Check status with `RemoteModelManager.getInstance()`
+- `translate()` in MlKitTranslationProvider auto-downloads models if missing
+- Check status with `RemoteModelManager.getInstance()` (see provider implementation)
 - Delete models with `deleteModel(languageCode)`
 - Deletion cleans up cached translators automatically
 - Error messages should mention WiFi requirement
+- **Implementation in :data module**, interface in :core module
 
 ---
 

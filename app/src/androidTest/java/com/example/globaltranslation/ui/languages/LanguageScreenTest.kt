@@ -1,0 +1,89 @@
+package com.example.globaltranslation.ui.languages
+
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.globaltranslation.MainActivity
+import com.example.globaltranslation.fake.FakeTranslationProvider
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import javax.inject.Inject
+
+/**
+ * Instrumentation tests for LanguageScreen.
+ * Tests language model management UI.
+ */
+@HiltAndroidTest
+@RunWith(AndroidJUnit4::class)
+class LanguageScreenTest {
+    
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+    
+    @get:Rule(order = 1)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    
+    @Inject
+    lateinit var fakeTranslationProvider: FakeTranslationProvider
+    
+    @Before
+    fun setup() {
+        hiltRule.inject()
+        fakeTranslationProvider.modelsDownloaded = true
+        
+        // Navigate to Languages tab
+        composeTestRule.onNodeWithText("Languages").performClick()
+        composeTestRule.waitForIdle()
+    }
+    
+    @Test
+    fun languageScreen_displaysInNavigation() {
+        composeTestRule
+            .onNodeWithText("Languages")
+            .assertIsDisplayed()
+    }
+    
+    @Test
+    fun languageScreen_displaysLanguageList() {
+        // Should display multiple languages
+        composeTestRule
+            .onNodeWithText("English")
+            .assertExists()
+        
+        composeTestRule
+            .onNodeWithText("Spanish")
+            .assertExists()
+    }
+    
+    @Test
+    fun languageScreen_loadsWithoutCrashing() {
+        // Verify the screen loads successfully
+        // Language management UI is displayed
+        composeTestRule.waitForIdle()
+        
+        // Should have English language visible
+        composeTestRule
+            .onNodeWithText("English")
+            .assertExists()
+    }
+    
+    @Test
+    fun languageScreen_hasRefreshButton() {
+        // Refresh button should exist
+        composeTestRule
+            .onNode(hasContentDescription("Refresh") or hasText("Refresh"))
+            .assertExists()
+    }
+    
+    @Test
+    fun languageScreen_displaysTitle() {
+        composeTestRule
+            .onNodeWithText("Manage Language Models", substring = true)
+            .assertExists()
+    }
+}
+

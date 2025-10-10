@@ -41,7 +41,6 @@ applyTo: '**/*'
 
 :app (Android App)
 ├── ui/ (Compose screens + ViewModels)
-├── services/ (Legacy - being migrated to :data)
 └── navigation/ (NavigationSuiteScaffold)
 ```
 
@@ -63,16 +62,29 @@ class GloabTranslationApplication : Application()  // Note: Class name unchanged
 @AndroidEntryPoint
 class MainActivity : ComponentActivity()
 
-// Providers available via :data module
-// Legacy services in :app (being migrated)
+// All providers injected from :data module via ProviderModule
+// ViewModels use provider interfaces from :core
 ```
 
 ## ✅ Implemented Features - FULLY FUNCTIONAL
 
-### Package Structure (in :app module)
+### Package Structure
 All features have been successfully implemented:
-- `services/` - ✅ Translation, SpeechRecognition, TTS, TextRecognition, CameraTranslation + ServicesModule
-- `ui/conversation/` - ✅ Live conversation translation with voice I/O
+
+**:core module** (Pure Kotlin):
+- `model/` - ✅ ConversationTurn domain model
+- `provider/` - ✅ 5 interfaces (Translation, Speech, TTS, OCR, Camera)
+- `repository/` - ✅ ConversationRepository interface
+- `util/` - ✅ TextBlockGroupingUtil business logic
+
+**:data module** (Android Library):
+- `provider/` - ✅ ML Kit & Android implementations (5 providers)
+- `repository/` - ✅ Room-based ConversationRepository
+- `local/` - ✅ Room database (DAO, entities)
+- `di/` - ✅ ProviderModule for dependency injection
+
+**:app module** (Android App):
+- `ui/conversation/` - ✅ Live conversation translation with voice I/O + persistence
 - `ui/textinput/` - ✅ Manual text translation with history management
 - `ui/camera/` - ✅ Real-time OCR translation with CameraX
 - `ui/languages/` - ✅ ML Kit model download and management
@@ -81,34 +93,48 @@ All features have been successfully implemented:
 
 ### Key Implementation Patterns (When Building Features)
 
-#### ML Kit Integration
+#### Provider Pattern (Clean Architecture)
 ```kotlin
-// Translation service pattern (fully implemented in services/)
+// Interface definition in :core module
+interface TranslationProvider {
+    suspend fun translate(text: String, from: String, to: String): Result<String>
+    suspend fun areModelsDownloaded(from: String, to: String): Boolean
+    suspend fun downloadModels(from: String, to: String): Result<Unit>
+    suspend fun deleteModel(languageCode: String): Result<Unit>
+    fun cleanup()
+}
+
+// Implementation in :data module
 @Singleton
-class TranslationService @Inject constructor() {
+class MlKitTranslationProvider @Inject constructor() : TranslationProvider {
+    private val activeTranslators = mutableMapOf<String, Translator>()
     
-    // Translates text, auto-downloads models on WiFi if needed
-    suspend fun translate(
-        text: String, 
-        from: String, 
-        to: String
-    ): Result<String>
+    override suspend fun translate(text: String, from: String, to: String): Result<String> {
+        return try {
+            val translator = getOrCreateTranslator(from, to)
+            val result = translator.translate(text).await()
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     
     // CRITICAL: Checks actual download status without triggering downloads
-    // Uses RemoteModelManager.getInstance() to check model availability
-    suspend fun areModelsDownloaded(
-        fromLanguage: String,
-        toLanguage: String
-    ): Boolean
+    override suspend fun areModelsDownloaded(from: String, to: String): Boolean {
+        val modelManager = RemoteModelManager.getInstance()
+        val fromDownloaded = modelManager.isModelDownloaded(
+            TranslateRemoteModel.Builder(from).build()
+        ).await()
+        val toDownloaded = modelManager.isModelDownloaded(
+            TranslateRemoteModel.Builder(to).build()
+        ).await()
+        return fromDownloaded && toDownloaded
+    }
     
-    // Explicitly downloads models (requires WiFi)
-    suspend fun downloadModels(
-        fromLanguage: String,
-        toLanguage: String
-    ): Result<Unit>
-    
-    // Deletes downloaded models to free storage space
-    suspend fun deleteModel(languageCode: String): Result<Unit>
+    override fun cleanup() {
+        activeTranslators.values.forEach { it.close() }
+        activeTranslators.clear()
+    }
 }
 ```
 
@@ -126,32 +152,49 @@ class TranslationService @Inject constructor() {
 - No additional dependencies needed, more stable than ML Kit version
 - Pattern: `SpeechRecognizer.createSpeechRecognizer(context)`
 
-#### Hilt Module Pattern (When Implementing Services)
+#### Hilt Provider Binding Pattern
 ```kotlin
+// In :data/di/ProviderModule.kt
 @Module
 @InstallIn(SingletonComponent::class)
-object ServicesModule {
+abstract class ProviderModule {
     
-    @Provides
+    @Binds
     @Singleton
-    fun provideTranslationService(): TranslationService = TranslationService()
+    abstract fun bindTranslationProvider(
+        impl: MlKitTranslationProvider
+    ): TranslationProvider
     
-    @Provides
+    @Binds
     @Singleton
-    fun provideSpeechRecognitionService(@ApplicationContext context: Context): SpeechRecognitionService = 
-        SpeechRecognitionService(context)
+    abstract fun bindSpeechProvider(
+        impl: AndroidSpeechProvider
+    ): SpeechProvider
+    
+    @Binds
+    @Singleton
+    abstract fun bindTextToSpeechProvider(
+        impl: AndroidTextToSpeechProvider
+    ): TextToSpeechProvider
 }
 ```
 
-#### ViewModel Pattern (Verified Implementation)
+**Why @Binds instead of @Provides:**
+- Generates less code (abstract methods)
+- Enforces interface-based programming
+- Better for testing (easy to swap implementations)
 
-**All ViewModels in this project follow StateFlow best practices:**
+#### ViewModel Pattern with Providers (Current Implementation)
+
+**All ViewModels use provider interfaces for clean architecture:**
 
 ```kotlin
 @HiltViewModel
 class ConversationViewModel @Inject constructor(
-    private val translationService: TranslationService,
-    private val speechService: SpeechRecognitionService
+    private val translationProvider: TranslationProvider,
+    private val speechProvider: SpeechProvider,
+    private val ttsProvider: TextToSpeechProvider,
+    private val conversationRepository: ConversationRepository
 ) : ViewModel() {
     // BEST PRACTICE: Private MutableStateFlow for internal updates
     private val _uiState = MutableStateFlow(ConversationUiState())
@@ -159,17 +202,28 @@ class ConversationViewModel @Inject constructor(
     val uiState: StateFlow<ConversationUiState> = _uiState.asStateFlow()
     
     // Always use viewModelScope for automatic cancellation
-    fun startTranslation(text: String) {
+    fun translateAndSave(text: String, fromLang: String, toLang: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isTranslating = true)
             try {
-                val result = translationService.translate(text, fromLang, toLang)
+                val result = translationProvider.translate(text, fromLang, toLang)
                 result.fold(
                     onSuccess = { translatedText ->
-                        _uiState.value = _uiState.value.copy(
+                        val turn = ConversationTurn(
+                            originalText = text,
                             translatedText = translatedText,
+                            sourceLang = fromLang,
+                            targetLang = toLang
+                        )
+                        
+                        // Update UI state
+                        _uiState.value = _uiState.value.copy(
+                            conversationHistory = _uiState.value.conversationHistory + turn,
                             isTranslating = false
                         )
+                        
+                        // Persist to Room database
+                        conversationRepository.saveConversation(turn)
                     },
                     onFailure = { exception ->
                         _uiState.value = _uiState.value.copy(
@@ -190,13 +244,14 @@ class ConversationViewModel @Inject constructor(
     // BEST PRACTICE: Clean up resources in onCleared()
     override fun onCleared() {
         super.onCleared()
-        speechService.cleanup()
+        speechProvider.cleanup()
+        ttsProvider.cleanup()
     }
 }
 
 // Data class for immutable state
 data class ConversationUiState(
-    val translatedText: String = "",
+    val conversationHistory: List<ConversationTurn> = emptyList(),
     val isTranslating: Boolean = false,
     val error: String? = null
 )
@@ -380,67 +435,112 @@ Add to `AndroidManifest.xml`:
 
 ## Testing Strategy
 
-### Service Testing Pattern
+### Provider Testing with Fakes
 ```kotlin
-@ExtendWith(MockitoExtension::class)
-class TranslationServiceTest {
+// Create fake provider in test/fake/ directory
+class FakeTranslationProvider : TranslationProvider {
+    var shouldSucceed = true
+    var translationResult = "Translated Text"
     
-    @Test
-    fun `translate returns success for valid input`() = runTest {
-        val service = TranslationService()
-        val result = service.translate("Hello", TranslateLanguage.ENGLISH, TranslateLanguage.SPANISH)
-        
-        assertTrue(result.isSuccess)
-        assertNotNull(result.getOrNull())
-    }
-    
-    @Test
-    fun `translate handles ML Kit model not downloaded`() = runTest {
-        // Test offline behavior and model download prompts
-    }
-}
-```
-
-### ViewModel Testing with StateFlow
-```kotlin
-@ExtendWith(MockitoExtension::class)
-class ConversationViewModelTest {
-    
-    @Mock private lateinit var translationService: TranslationService
-    
-    @Test
-    fun `state updates correctly during translation`() = runTest {
-        val viewModel = ConversationViewModel(translationService)
-        val testCollector = viewModel.state.test {
-            
-            viewModel.startTranslation("Hello")
-            
-            // Verify loading state
-            expectItem().isLoading shouldBe true
-            // Verify success state
-            expectItem().let { state ->
-                state.isLoading shouldBe false
-                state.translatedText shouldBe "Hola"
-            }
+    override suspend fun translate(text: String, from: String, to: String): Result<String> {
+        return if (shouldSucceed) {
+            Result.success("$translationResult: $text")
+        } else {
+            Result.failure(Exception("Translation failed"))
         }
     }
+    
+    override suspend fun areModelsDownloaded(from: String, to: String) = true
+    override suspend fun downloadModels(from: String, to: String) = Result.success(Unit)
+    override suspend fun deleteModel(languageCode: String) = Result.success(Unit)
+    override fun cleanup() {}
+}
+
+// Use in tests via Hilt
+@Module
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [ProviderModule::class]
+)
+abstract class TestProviderModule {
+    @Binds
+    @Singleton
+    abstract fun bindTranslationProvider(impl: FakeTranslationProvider): TranslationProvider
 }
 ```
 
-### Compose UI Testing
+### ViewModel Testing with Fake Providers
 ```kotlin
-@Test
-fun `conversation screen shows microphone button when not listening`() {
-    composeTestRule.setContent {
-        ConversationScreen(
-            isListening = false,
-            onStartListening = { }
-        )
+@HiltAndroidTest
+@RunWith(AndroidJUnit4::class)
+class ConversationViewModelTest {
+    
+    @get:Rule
+    val hiltRule = HiltAndroidRule(this)
+    
+    @Inject
+    lateinit var fakeTranslationProvider: FakeTranslationProvider
+    
+    @Before
+    fun setup() {
+        hiltRule.inject()
     }
     
-    composeTestRule
-        .onNodeWithContentDescription("Start listening")
-        .assertIsDisplayed()
+    @Test
+    fun `translation success updates state correctly`() = runTest {
+        fakeTranslationProvider.translationResult = "Hola"
+        val viewModel = ConversationViewModel(
+            fakeTranslationProvider,
+            fakeSpeechProvider,
+            fakeTtsProvider,
+            fakeRepository
+        )
+        
+        val stateValues = mutableListOf<ConversationUiState>()
+        backgroundScope.launch {
+            viewModel.uiState.toList(stateValues)
+        }
+        
+        viewModel.translateAndSave("Hello", "en", "es")
+        advanceUntilIdle()
+        
+        // Verify conversation was added
+        assertTrue(stateValues.last().conversationHistory.isNotEmpty())
+        assertEquals("Hola", stateValues.last().conversationHistory.first().translatedText)
+    }
+}
+```
+
+### Compose UI Testing with Hilt
+```kotlin
+@HiltAndroidTest
+@RunWith(AndroidJUnit4::class)
+class ConversationScreenTest {
+    
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+    
+    @get:Rule(order = 1)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    
+    @Inject
+    lateinit var fakeTranslationProvider: FakeTranslationProvider
+    
+    @Before
+    fun setup() {
+        hiltRule.inject()
+    }
+    
+    @Test
+    fun conversationScreen_displaysLanguageSelectors() {
+        composeTestRule.onNodeWithText("Conversation").performClick()
+        composeTestRule.waitForIdle()
+        
+        // Verify language selectors exist
+        composeTestRule
+            .onAllNodesWithContentDescription("Select language")
+            .assertCountEquals(2)
+    }
 }
 ```
 

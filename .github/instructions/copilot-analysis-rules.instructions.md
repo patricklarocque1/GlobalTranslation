@@ -16,29 +16,59 @@ These rules ensure thorough code analysis, proper context understanding, and mis
 - **Check imports, dependencies, and class structure** to understand relationships
 - **Read related files** when changes might affect multiple components
 
-### Current Project Structure (All Implemented)
+### Current Project Structure (Multi-Module Architecture)
 
 ```
-app/src/main/java/com/example/globaltranslation/
+:core/src/main/kotlin/com/example/globaltranslation/core/
+├── model/
+│   └── ConversationTurn.kt           # Domain model
+├── provider/                          # ✅ 5 INTERFACES
+│   ├── TranslationProvider.kt
+│   ├── SpeechProvider.kt
+│   ├── TextToSpeechProvider.kt
+│   ├── TextRecognitionProvider.kt
+│   └── CameraTranslationProvider.kt
+├── repository/
+│   └── ConversationRepository.kt     # Persistence interface
+└── util/
+    └── TextBlockGroupingUtil.kt      # Business logic
+
+:data/src/main/kotlin/com/example/globaltranslation/data/
+├── provider/                          # ✅ ML KIT IMPLEMENTATIONS
+│   ├── MlKitTranslationProvider.kt
+│   ├── AndroidSpeechProvider.kt
+│   ├── AndroidTextToSpeechProvider.kt
+│   ├── MlKitTextRecognitionProvider.kt
+│   └── MlKitCameraTranslationProvider.kt
+├── repository/
+│   └── RoomConversationRepository.kt # Room implementation
+├── local/                            # Room database
+│   ├── ConversationDao.kt
+│   ├── ConversationEntity.kt
+│   └── ConversationDatabase.kt
+└── di/
+    ├── DataModule.kt
+    └── ProviderModule.kt             # Hilt bindings
+
+:app/src/main/java/com/example/globaltranslation/
 ├── MainActivity.kt                    # NavigationSuiteScaffold host
 ├── GloabTranslationApplication.kt     # @HiltAndroidApp
-├── model/ConversationTurn.kt          # Data model for conversation history
-├── services/                          # ✅ ALL SERVICES IMPLEMENTED
-│   ├── ServicesModule.kt             # Hilt DI module
-│   ├── TranslationService.kt         # ML Kit translation + model mgmt
-│   ├── SpeechRecognitionService.kt   # Android SpeechRecognizer wrapper
-│   └── TextToSpeechService.kt        # TTS with language support
+├── model/
+│   └── ConversationTurn.kt           # Typealias to :core
 ├── ui/components/
 │   └── LanguagePicker.kt             # Reusable dialog/button components
 ├── ui/conversation/                   # ✅ LIVE TRANSLATION COMPLETE
 │   ├── ConversationScreen.kt         # Voice I/O with permissions
-│   └── ConversationViewModel.kt      # State management + services
+│   └── ConversationViewModel.kt      # Uses providers from :data
 ├── ui/textinput/                      # ✅ TEXT TRANSLATION COMPLETE
 │   ├── TextInputScreen.kt            # Manual input with history
-│   └── TextInputViewModel.kt         # Translation history management
+│   └── TextInputViewModel.kt         # Uses TranslationProvider
+├── ui/camera/                         # ✅ CAMERA TRANSLATION COMPLETE
+│   ├── CameraScreen.kt               # OCR with CameraX
+│   └── CameraViewModel.kt            # Uses CameraTranslationProvider
 ├── ui/languages/                      # ✅ MODEL MANAGEMENT COMPLETE
 │   ├── LanguageScreen.kt             # Download/status UI
-│   └── LanguageViewModel.kt          # ML Kit model operations
+│   └── LanguageViewModel.kt          # Uses TranslationProvider
 └── ui/theme/                          # Material3 theme configuration
 ```
 
@@ -99,14 +129,20 @@ BEFORE making ANY code change:
 #### Architecture Violations
 
 ```text
-❌ WRONG: Direct service calls from Compose UI
-✅ CORRECT: All service calls go through ViewModels
+❌ WRONG: Direct provider calls from Compose UI
+✅ CORRECT: All provider calls go through ViewModels
+
+❌ WRONG: ViewModels depending on implementations (MlKitTranslationProvider)
+✅ CORRECT: ViewModels depend on interfaces (TranslationProvider from :core)
 
 ❌ WRONG: Navigation logic in ViewModels
 ✅ CORRECT: Navigation handled at Compose level only
 
 ❌ WRONG: Mutable state exposed directly
 ✅ CORRECT: Use StateFlow/MutableStateFlow pattern with private _state
+
+❌ WRONG: :app module accessing :data implementations directly
+✅ CORRECT: :app only uses :core interfaces, Hilt provides :data implementations
 ```
 
 ### 2. Pre-Change Validation Checklist
@@ -150,14 +186,40 @@ When working with ViewModels:
 3. Confirm proper viewModelScope usage for coroutines
 4. Validate error handling patterns
 
-### Service Class Analysis
+### Provider Class Analysis
 
-When creating/editing services:
+When creating/editing providers:
 
-1. Check if Hilt module exists for the service
-2. Verify proper dependency injection setup
-3. Confirm interface contracts match usage
-4. Validate error handling and async patterns
+1. Ensure interface exists in :core module
+2. Verify implementation in :data module
+3. Check Hilt binding in ProviderModule
+4. Confirm interface contracts match usage
+5. Validate error handling and async patterns
+6. Ensure cleanup() method properly releases resources
+
+### Provider Testing Pattern
+
+When testing code that uses providers:
+
+1. Create fake implementations in `androidTest/fake/` directory
+2. Use `@TestInstallIn` to replace production providers
+3. Inject fakes via `@Inject lateinit var fakeProvider: FakeProvider`
+4. Control behavior with public properties (e.g., `shouldSucceed`, `result`)
+
+**Example Fake Provider:**
+```kotlin
+class FakeTranslationProvider : TranslationProvider {
+    var shouldSucceed = true
+    var translationResult = "Translated Text"
+    
+    override suspend fun translate(text: String, from: String, to: String): Result<String> {
+        return if (shouldSucceed) Result.success(translationResult)
+        else Result.failure(Exception("Translation failed"))
+    }
+    
+    override fun cleanup() {}
+}
+```
 
 ### Build File Analysis
 
