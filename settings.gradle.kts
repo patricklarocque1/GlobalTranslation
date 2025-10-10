@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GloabTranslation"
+rootProject.name = "GlobalTranslation"
 include(":app")

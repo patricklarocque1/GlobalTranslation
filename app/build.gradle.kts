@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.gloabtranslation"
+    namespace = "com.example.globaltranslation"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.gloabtranslation"
+        applicationId = "com.example.globaltranslation"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
