@@ -11,6 +11,7 @@ This document explains how different instruction files work together to provide 
 - Multi-module architecture structure
 - Immediate best practices
 - Critical build configuration
+- 16KB page size support patterns
 - Common patterns used in this project
 - Quick troubleshooting reference
 
@@ -27,6 +28,7 @@ This document explains how different instruction files work together to provide 
 - Complete architecture overview
 - Detailed implementation patterns
 - Full project context and status
+- 16KB page size support implementation
 - Testing strategies
 - Future enhancement areas
 
@@ -45,6 +47,7 @@ This document explains how different instruction files work together to provide 
 - Post-change verification steps
 - Debugging workflows
 - Context gathering rules
+- 16KB page size compatibility checks
 
 **When to consult**:
 - Before making any code changes
@@ -60,6 +63,7 @@ This document explains how different instruction files work together to provide 
 - Build configuration details
 - Recent fixes and their impacts
 - Code quality verification results
+- 16KB page size support completion
 - Potential future enhancements
 
 **When to consult**:
@@ -75,6 +79,7 @@ This document explains how different instruction files work together to provide 
 - Getting started guide
 - Build requirements
 - Project structure
+- 16KB page size support information
 - Troubleshooting common issues
 - Production-ready status
 
@@ -92,48 +97,57 @@ This document explains how different instruction files work together to provide 
 - ✅ Verify feature isn't already implemented
 - ✅ Check current architecture status
 - ✅ Understand existing patterns
+- ✅ Verify 16KB page size support status
 
 **Step 2**: Read `.github/instructions/copilot-instructions.md`
 - ✅ Learn detailed implementation patterns
 - ✅ Review ViewModel and Service patterns
 - ✅ Understand Hilt setup requirements
+- ✅ Check 16KB page size implementation details
 - ✅ Check testing approach
 
 **Step 3**: Check `.github/instructions/copilot-analysis-rules.instructions.md`
 - ✅ Review pre-change validation checklist
 - ✅ Understand common mistake patterns
 - ✅ Note architecture constraints
+- ✅ Verify 16KB compatibility requirements
 
 **Step 4**: Use `.cursorrules` during implementation
 - ✅ Quick reference for StateFlow pattern
 - ✅ Verify Hilt annotations
 - ✅ Check code quality standards
 - ✅ Ensure resource cleanup
+- ✅ Verify 16KB page size patterns
 
 **Step 5**: Validate with `.github/instructions/copilot-analysis-rules.instructions.md`
 - ✅ Run post-change validation
 - ✅ Verify no architecture violations
 - ✅ Check build configuration unchanged
+- ✅ Test 16KB build variant compatibility
 
 ### Example 2: Fixing a Build Error
 
 **Step 1**: Check `README.md` Troubleshooting
 - ✅ Look for matching error in troubleshooting section
 - ✅ Try suggested quick fixes
+- ✅ Check 16KB page size specific issues
 
 **Step 2**: Consult `.cursorrules` Common Issues
 - ✅ Review "Common Issues & Solutions"
 - ✅ Check build configuration requirements
+- ✅ Verify 16KB page size configuration
 
 **Step 3**: Use `.github/instructions/copilot-analysis-rules.instructions.md`
 - ✅ Follow debugging workflow
 - ✅ Check version compatibility
 - ✅ Verify plugin configuration
+- ✅ Test 16KB build variant
 
 **Step 4**: Verify against `.github/instructions/copilot-instructions.md`
 - ✅ Confirm build system setup matches
 - ✅ Check dependency versions
 - ✅ Review critical build setup section
+- ✅ Verify 16KB page size implementation
 
 ### Example 3: Code Review / Validation
 
@@ -141,21 +155,25 @@ This document explains how different instruction files work together to provide 
 - ✅ Verify StateFlow pattern correct
 - ✅ Check Hilt annotations present
 - ✅ Confirm resource cleanup exists
+- ✅ Verify 16KB page size patterns
 
 **Step 2**: Validate with `.github/instructions/copilot-analysis-rules.instructions.md`
 - ✅ Run through architecture validation rules
 - ✅ Check for common mistake patterns
 - ✅ Verify file-specific patterns
+- ✅ Test 16KB build variant compatibility
 
 **Step 3**: Compare against `.github/instructions/copilot-instructions.md`
 - ✅ Ensure matches documented patterns
 - ✅ Verify follows best practices
 - ✅ Check integration points
+- ✅ Verify 16KB page size implementation
 
 **Step 4**: Update `Project Plan.md` if needed
 - ✅ Document new implementation
 - ✅ Note any issues found and fixed
 - ✅ Update verification status
+- ✅ Update 16KB page size support status
 
 ## 📊 Information Hierarchy
 
@@ -206,7 +224,7 @@ README.md (Setup & Troubleshooting)
 ## 🔍 Finding Information
 
 ### "What build configuration should I use?"
-→ `.cursorrules` → Critical Build Rules section
+→ `.cursorrules` → Critical Build Rules section (includes 16KB support)
 → `README.md` → Build Requirements section
 → Verify: `gradle/libs.versions.toml`
 
@@ -226,7 +244,7 @@ README.md (Setup & Troubleshooting)
 → `copilot-analysis-rules.instructions.md` → Debugging Workflow
 
 ### "What patterns should I follow?"
-→ `.cursorrules` → Code Quality Standards
+→ `.cursorrules` → Code Quality Standards (includes 16KB patterns)
 → `copilot-instructions.md` → Key Implementation Patterns
 → Examples: Existing code in project
 
@@ -234,6 +252,12 @@ README.md (Setup & Troubleshooting)
 → `copilot-analysis-rules.instructions.md` → Common Mistake Patterns
 → `.cursorrules` → DON'T section
 → Pre-change validation checklist
+
+### "How do I ensure 16KB page size compatibility?"
+→ `.cursorrules` → 16KB Page Size Support section
+→ `copilot-instructions.md` → 16KB Page Size Support section
+→ `copilot-analysis-rules.instructions.md` → 16KB compatibility checks
+→ Test: `./gradlew :app:assembleSixteenKB`
 
 ## 📝 Maintenance Guidelines
 
@@ -243,29 +267,34 @@ README.md (Setup & Troubleshooting)
 - ✅ New critical build requirement discovered
 - ✅ Common pattern established
 - ✅ Frequent issue needs quick reference
+- ✅ 16KB page size support patterns added
 
 **`copilot-instructions.md`**
 - ✅ Major architectural change
 - ✅ New implementation pattern adopted
 - ✅ Significant feature added
+- ✅ 16KB page size support implemented
 - ✅ Testing approach changes
 
 **`copilot-analysis-rules.instructions.md`**
 - ✅ New common mistake identified
 - ✅ Debugging workflow improved
 - ✅ Validation checklist updated
+- ✅ 16KB page size compatibility checks added
 
 **`Project Plan.md`**
 - ✅ Feature implementation status changes
 - ✅ Build configuration updated
 - ✅ Significant bug fixed
 - ✅ Code quality metrics updated
+- ✅ 16KB page size support completion
 
 **`README.md`**
 - ✅ User-facing changes
 - ✅ Setup process changes
 - ✅ New troubleshooting solution
 - ✅ Build requirements change
+- ✅ 16KB page size support information added
 
 ## 🚀 Integration with AI Tools
 

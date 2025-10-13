@@ -5,7 +5,7 @@ applyTo: '**/*'
 # Copilot Code Analysis & Debugging Rules
 
 ## Overview
-These rules ensure thorough code analysis, proper context understanding, and mistake detection when working with the **COMPLETED** GlobalTranslation Android app codebase. All core features are implemented and functional.
+These rules ensure thorough code analysis, proper context understanding, and mistake detection when working with the **COMPLETED** GlobalTranslation Android app codebase. All core features are implemented and functional, including **comprehensive 16KB page size support** for ARM64 devices and Google Play compliance.
 
 ## Core Analysis Principles
 
@@ -51,7 +51,7 @@ These rules ensure thorough code analysis, proper context understanding, and mis
     └── ProviderModule.kt             # Hilt bindings
 
 :app/src/main/java/com/example/globaltranslation/
-├── MainActivity.kt                    # NavigationSuiteScaffold host
+├── MainActivity.kt                    # NavigationSuiteScaffold host + DeviceCompatibility
 ├── GloabTranslationApplication.kt     # @HiltAndroidApp
 ├── model/
 │   └── ConversationTurn.kt           # Typealias to :core
@@ -69,7 +69,9 @@ These rules ensure thorough code analysis, proper context understanding, and mis
 ├── ui/languages/                      # ✅ MODEL MANAGEMENT COMPLETE
 │   ├── LanguageScreen.kt             # Download/status UI
 │   └── LanguageViewModel.kt          # Uses TranslationProvider
-└── ui/theme/                          # Material3 theme configuration
+├── ui/theme/                          # Material3 theme configuration
+└── util/                              # ✅ 16KB PAGE SIZE SUPPORT COMPLETE
+    └── DeviceCompatibility.kt        # Page size monitoring and logging
 ```
 
 ### 2. Complete Context Gathering Rules
@@ -111,6 +113,12 @@ BEFORE making ANY code change:
 
 ❌ WRONG: Mismatched JVM targets between Java and Kotlin
 ✅ CORRECT: Both compileOptions and kotlinOptions must target JVM 11
+
+❌ WRONG: Missing 16KB page size configuration
+✅ CORRECT: Include NDK ABI filters and useLegacyPackaging = false
+
+❌ WRONG: Missing ProGuard rules for data module classes
+✅ CORRECT: Add keep rules for com.example.globaltranslation.data.** classes
 ```
 
 #### Hilt Integration Mistakes
@@ -281,6 +289,8 @@ Watch for these common issues:
 5. **Check version compatibility** - ensure AGP 8.13.0, Kotlin 2.2.20, and KSP 2.2.20-2.0.2 compatibility
 6. **Verify JVM target alignment** - both Java and Kotlin must target JVM 11
 7. **Review existing patterns** - ensure consistency with current codebase
+8. **Check 16KB compatibility** - verify NDK configuration and ProGuard rules
+9. **Test build variants** - use `sixteenKB` variant for ARM64 testing
 
 ### When Suggesting Solutions:
 
@@ -315,6 +325,9 @@ Watch for these common issues:
 - 🚨 Navigation structure changes without planning
 - 🚨 Dependency version conflicts
 - 🚨 Architecture pattern violations
+- 🚨 16KB page size compatibility issues
+- 🚨 ProGuard missing class errors
+- 🚨 Native library alignment problems
 
 ### Success Criteria:
 
@@ -323,6 +336,9 @@ Watch for these common issues:
 - ✅ Maintains architecture consistency
 - ✅ All dependencies properly configured
 - ✅ Hilt injection works correctly
+- ✅ 16KB page size compatibility maintained
+- ✅ All build variants (debug, release, sixteenKB) work
+- ✅ ProGuard rules protect necessary classes
 
 ## Integration with Main Instructions
 

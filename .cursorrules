@@ -9,10 +9,11 @@ This is a **PRODUCTION-READY** Android translation app built with Jetpack Compos
 - **Pattern**: MVVM with StateFlow, Hilt DI, Jetpack Compose
 - **UI**: Material3 Expressive Theme (lavender/purple palette, large corner radii)
 - **Translation**: ML Kit Translate API with offline model management
-- **Persistence**: Room 2.7.0-alpha11 for conversation history
+- **Persistence**: Room 2.7.0-alpha11 for conversation history with 16KB page size support
 - **Camera**: CameraX 1.3.1 with ML Kit Text Recognition for OCR
 - **Min/Target SDK**: 29/36, JVM Target: 11
 - **Package**: com.example.globaltranslation (fixed typo from gloabtranslation)
+- **16KB Page Size**: Full ARM64 support with Google Play compliance
 
 ## Critical Build Rules
 
@@ -47,6 +48,30 @@ kotlin {
 - For Kotlin 2.2.20, use KSP `2.2.20-2.0.2` (NOT 1.0.x!)
 - KSP versioning changed from `1.0.x` to `2.0.x` format
 - Version must match: `<kotlin-version>-<ksp-version>`
+
+### 4. 16KB Page Size Support (NEW)
+```kotlin
+// In app/build.gradle.kts and data/build.gradle.kts
+defaultConfig {
+    ndk {
+        // Ensure all ABIs are properly configured for 16KB page size
+        abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+    }
+}
+
+packaging {
+    jniLibs {
+        useLegacyPackaging = false  // Required for 16KB alignment
+    }
+}
+
+// 16KB test build variant
+create("sixteenKB") {
+    initWith(getByName("debug"))
+    isDebuggable = true
+    applicationIdSuffix = ".sixteenkb"
+}
+```
 
 ## StateFlow Best Practices (ALL ViewModels Use This)
 
@@ -123,7 +148,7 @@ The project uses a 3-module clean architecture:
 ```
 app/src/main/java/com/example/globaltranslation/
 ├── GloabTranslationApplication.kt     # @HiltAndroidApp
-├── MainActivity.kt                    # @AndroidEntryPoint + NavigationSuiteScaffold
+├── MainActivity.kt                    # @AndroidEntryPoint + NavigationSuiteScaffold + DeviceCompatibility
 ├── model/
 │   └── ConversationTurn.kt           # Data models
 ├── services/                         # All @Singleton + @Inject
@@ -151,6 +176,8 @@ app/src/main/java/com/example/globaltranslation/
 │   └── theme/                        # Material3 Expressive Theme
 │       ├── ExpressiveColors.kt       # Lavender/purple ✅ NEW
 │       └── ExpressiveShapes.kt       # Large corner radii ✅ NEW
+└── util/
+    └── DeviceCompatibility.kt        # 16KB page size monitoring ✅ NEW
 ```
 
 ## Hilt Dependency Injection Rules
@@ -277,6 +304,21 @@ fun MyComponent(
 ### Issue: ClassNotFoundException at Runtime
 **Error**: `ClassNotFoundException: GloabTranslationApplication`
 **Solution**: Ensure KSP is generating code - check all plugins are present
+
+### Issue: 16KB Page Size Compatibility
+**Error**: App crashes on new ARM64 devices with 16KB pages
+**Solution**: 
+1. Verify NDK ABI filters include arm64-v8a
+2. Check `useLegacyPackaging = false` in packaging config
+3. Test with `sixteenKB` build variant: `./gradlew :app:assembleSixteenKB`
+4. Use DeviceCompatibility.logPageSizeInfo() for debugging
+
+### Issue: ProGuard Missing Classes
+**Error**: `Missing classes detected while running R8`
+**Solution**: 
+1. Add keep rules for data module classes in proguard-rules.pro
+2. Ensure native method preservation rules are present
+3. Check Hilt generated classes are kept
 
 ## Navigation Pattern
 

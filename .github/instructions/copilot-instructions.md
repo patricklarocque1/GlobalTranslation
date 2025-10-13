@@ -5,7 +5,7 @@ applyTo: '**/*'
 # Copilot Instructions for GlobalTranslation Android App
 
 ## Project Overview
-**PRODUCTION-READY** Android translation app with **multi-module clean architecture** using Jetpack Compose and ML Kit. Core features complete: live conversation translation, text input translation, camera translation, and language management. Architecture refactored into :core, :data, and :app modules for optimal testability and maintainability.
+**PRODUCTION-READY** Android translation app with **multi-module clean architecture** using Jetpack Compose and ML Kit. Core features complete: live conversation translation, text input translation, camera translation, and language management. Architecture refactored into :core, :data, and :app modules for optimal testability and maintainability. **Now includes comprehensive 16KB page size support** for ARM64 devices and Google Play compliance.
 
 ## Critical Build Setup (MUST READ FIRST)
 
@@ -16,6 +16,7 @@ applyTo: '**/*'
 - **Hilt Version**: 2.57.2
 - **JVM Target**: 11 (must be aligned between Java and Kotlin compileOptions)
 - **Build command**: Use `.\gradlew build` (PowerShell) or `./gradlew build` (bash)
+- **16KB Page Size**: Full ARM64 support with Google Play compliance
 
 ### Dependency Management
 - **Version Catalogs**: All dependencies in `gradle/libs.versions.toml` using `libs.` references
@@ -90,6 +91,7 @@ All features have been successfully implemented:
 - `ui/languages/` - ✅ ML Kit model download and management
 - `ui/components/` - ✅ Reusable LanguagePicker dialog and button components
 - `ui/theme/` - ✅ Material3 Expressive Theme (lavender/purple palette)
+- `util/` - ✅ DeviceCompatibility utility for 16KB page size monitoring
 
 ### Key Implementation Patterns (When Building Features)
 
@@ -575,7 +577,34 @@ When extending this completed app:
 2. **Services are injectable** - Use existing ServicesModule for new dependencies
 3. **UI follows Material3** - Extend existing component patterns for consistency
 4. **Testing patterns documented** - Follow established ViewModel and service testing patterns
-5. **Build system stable** - AGP 8.13.0 + Kotlin 2.1.0 configuration is production-ready
+5. **Build system stable** - AGP 8.13.0 + Kotlin 2.2.20 configuration is production-ready
+6. **16KB page size ready** - All new features automatically support ARM64 16KB pages
+
+## 📱 16KB Page Size Support (NEW)
+
+### Implementation Complete ✅
+- **NDK Configuration**: All ABIs properly configured for 16KB alignment
+- **Build Variants**: `sixteenKB` test variant for validation
+- **Room Database**: Automatic 16KB page size handling with Room 2.7+
+- **Native Libraries**: ML Kit libraries aligned for 16KB compatibility
+- **Device Monitoring**: DeviceCompatibility utility for page size detection
+- **ProGuard Rules**: Native method preservation and data module protection
+- **Data Safety**: Existing user data preserved - no migration required
+
+### Testing 16KB Compatibility
+```bash
+# Test 16KB build variant
+./gradlew :app:assembleSixteenKB
+
+# Test on 16KB emulator (Android 15+ ARM64)
+# DeviceCompatibility logs page size info on app startup
+```
+
+### Google Play Compliance
+- ✅ **Ready for 2025 requirements** - Full ARM64 16KB page size support
+- ✅ **Backward compatible** - Works on 4KB devices without issues
+- ✅ **Data preservation** - Room automatically handles page size differences
+- ✅ **Native library alignment** - All ML Kit libraries properly configured
 
 ## Future Enhancement Areas
 Potential areas for expansion:

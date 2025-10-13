@@ -30,6 +30,16 @@ kotlin {
 }
 // Note: Old kotlinOptions is deprecated
 
+// 16KB Page Size Support (app/build.gradle.kts & data/build.gradle.kts)
+defaultConfig {
+    ndk {
+        abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+    }
+}
+packaging {
+    jniLibs { useLegacyPackaging = false }
+}
+
 // Required Plugins (app/build.gradle.kts)
 plugins {
     alias(libs.plugins.android.application)
@@ -183,7 +193,9 @@ fun MyComponent(
     ├── languages/                    # @HiltViewModel + providers
     │   ├── LanguageScreen.kt
     │   └── LanguageViewModel.kt
-    └── theme/                        # Material3 theme
+    ├── theme/                        # Material3 theme
+    └── util/                         # ✅ 16KB PAGE SIZE SUPPORT
+        └── DeviceCompatibility.kt   # Page size monitoring
 ```
 
 ## ❌ Common Mistakes
@@ -232,6 +244,12 @@ plugins {
     alias(libs.plugins.android.application)
     // Missing kotlin.android! Required!
 }
+
+// ❌ DON'T forget 16KB page size support
+// Missing NDK configuration and useLegacyPackaging = false
+
+// ❌ DON'T forget ProGuard rules for data module
+// Missing keep rules for com.example.globaltranslation.data.** classes
 ```
 
 ## ✅ Correct Patterns
@@ -276,6 +294,15 @@ data class MyUiState(
     val isLoading: Boolean = false,
     val error: String? = null
 )
+
+// ✅ DO include 16KB page size support
+defaultConfig {
+    ndk { abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")) }
+}
+packaging { jniLibs { useLegacyPackaging = false } }
+
+// ✅ DO add ProGuard rules for data module
+-keep class com.example.globaltranslation.data.** { *; }
 ```
 
 ## 🔍 Quick Troubleshooting
@@ -287,6 +314,8 @@ data class MyUiState(
 | ClassNotFoundException: Application | Missing `kotlin.android` plugin |
 | Hilt_* classes not generated | 1. Add kotlin.android plugin<br>2. Run `./gradlew clean build` |
 | Import errors in ViewModel | Check Hilt and StateFlow imports |
+| Missing classes in R8 | Add ProGuard keep rules for data module classes |
+| 16KB page size crashes | Verify NDK ABI filters and useLegacyPackaging = false |
 
 ## 📚 Documentation Files
 
@@ -332,6 +361,9 @@ data class MyUiState(
 # Build debug APK
 ./gradlew :app:assembleDebug
 
+# Build 16KB test variant
+./gradlew :app:assembleSixteenKB
+
 # Install on device
 ./gradlew :app:installDebug
 
@@ -340,6 +372,9 @@ data class MyUiState(
 
 # Sync Gradle
 ./gradlew --refresh-dependencies
+
+# Test all build variants
+./gradlew build
 ```
 
 ## 📱 App Info
@@ -350,9 +385,10 @@ data class MyUiState(
 - **Target SDK**: 36
 - **4 Screens**: Conversation, Text Input, Camera, Languages
 - **4 ViewModels**: All use StateFlow pattern
-- **Persistence**: Room database in :data module  
+- **Persistence**: Room database in :data module with 16KB support
 - **Providers**: All in :data module (ML Kit + Android implementations)
 - **Features**: Translation, TTS, Clipboard, Model Management
+- **16KB Support**: Full ARM64 compatibility with Google Play compliance
 
 ## 🔍 ML Kit Translation Gotchas
 
