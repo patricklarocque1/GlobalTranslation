@@ -12,6 +12,11 @@ android {
     defaultConfig {
         minSdk = 29
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            // Ensure all ABIs are properly configured for 16KB page size
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+        }
     }
     
     compileOptions {
@@ -22,6 +27,27 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
+    }
+    
+    buildTypes {
+        debug {
+            isMinifyEnabled = false
+        }
+        release {
+            isMinifyEnabled = true
+        }
+        
+        // 16KB page size testing build variant (matches app module)
+        create("sixteenKB") {
+            initWith(getByName("debug"))
+            isMinifyEnabled = false
+        }
+    }
+    
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
 }

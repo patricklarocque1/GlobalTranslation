@@ -2,6 +2,8 @@ package com.example.globaltranslation.data.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.globaltranslation.data.local.ConversationDao
 import com.example.globaltranslation.data.local.ConversationDatabase
 import dagger.Module
@@ -28,6 +30,13 @@ object DataModule {
             ConversationDatabase::class.java,
             "conversation_database"
         )
+        // Set SQLite page size to 16KB for Google Play compliance
+        .addCallback(object : RoomDatabase.Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
+                db.execSQL("PRAGMA page_size = 16384;")
+            }
+        })
         // Use destructive migration only on downgrade (safer for production)
         .fallbackToDestructiveMigrationOnDowngrade()
         // Add migrations here as schema evolves

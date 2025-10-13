@@ -34,6 +34,11 @@
 -keep class com.google.mlkit.vision.text.** { *; }
 -keep class com.google.mlkit.common.** { *; }
 
+# Keep native method signatures for 16KB page size compatibility
+-keepclasseswithmembernames,includedescriptorclasses class * {
+    native <methods>;
+}
+
 # Room keep rules
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
@@ -61,6 +66,13 @@
 -keep class com.example.globaltranslation.ui.**.* { *; }
 -keep class com.example.globaltranslation.core.model.** { *; }
 -keep class com.example.globaltranslation.core.provider.** { *; }
+
+# Keep data module classes
+-keep class com.example.globaltranslation.data.** { *; }
+-dontwarn com.example.globaltranslation.data.**
+
+# Keep Hilt generated classes for data module
+-keep class com.example.globaltranslation.data.di.** { *; }
 
 # OkHttp and Conscrypt (used by Google Play Services for ML Kit downloads)
 -dontwarn okhttp3.**

@@ -18,6 +18,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            // Ensure all ABIs are properly configured for 16KB page size
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+        }
     }
 
     buildTypes {
@@ -33,6 +38,19 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        
+        // 16KB page size testing build variant
+        create("sixteenKB") {
+            initWith(getByName("debug"))
+            isDebuggable = true
+            applicationIdSuffix = ".sixteenkb"
+        }
+    }
+    
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
     compileOptions {

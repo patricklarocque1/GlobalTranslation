@@ -43,6 +43,18 @@ An Android translation app built with Jetpack Compose and ML Kit. **Multi-module
 - **Permissions**: Runtime permission handling with Accompanist Permissions
 - **Testing**: JUnit + Hilt Testing + Compose UI Testing
 
+## 📱 16KB Page Size Support
+
+This app supports Android devices with **16KB memory pages** (ARM64):
+
+- **ML Kit libraries**: Latest versions with 16KB compatibility
+- **Room database**: 2.7+ with automatic page size handling  
+- **Native libraries**: Verified for 16KB alignment
+- **Tested on**: Android 15+ ARM64 emulators with 16KB pages
+- **Compliance**: Ready for Google Play 16KB page size requirements
+
+**Data Preservation**: Existing user data remains intact - no migration required. Room 2.7+ automatically handles page size differences.
+
 ## 🔧 Build Requirements
 
 - **Android Studio**: Latest stable (tested with Ladybug+)
