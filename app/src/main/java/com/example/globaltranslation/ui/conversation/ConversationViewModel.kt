@@ -252,6 +252,43 @@ class ConversationViewModel @Inject constructor(
     }
     
     /**
+     * Refreshes the conversation history when user pulls to refresh.
+     */
+    fun refreshConversationHistory() {
+        _uiState.value = _uiState.value.copy(
+            isRefreshing = true,
+            showSavedHistory = true // Show history when refreshing
+        )
+        
+        viewModelScope.launch {
+            try {
+                // Reload conversation history from repository
+                // The repository flow will automatically update the UI state
+                kotlinx.coroutines.delay(800) // Small delay for better UX
+                _uiState.value = _uiState.value.copy(isRefreshing = false)
+                
+                // Auto-hide history after 5 seconds
+                kotlinx.coroutines.delay(5000)
+                if (!_uiState.value.isRefreshing) {
+                    _uiState.value = _uiState.value.copy(showSavedHistory = false)
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isRefreshing = false,
+                    error = "Failed to refresh history: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Manually hides the saved history.
+     */
+    fun hideSavedHistory() {
+        _uiState.value = _uiState.value.copy(showSavedHistory = false)
+    }
+    
+    /**
      * Deletes a saved conversation turn.
      */
     fun deleteSavedConversation(timestamp: Long) {
@@ -341,6 +378,7 @@ data class ConversationUiState(
     val conversationHistory: List<ConversationTurn> = emptyList(),
     val savedHistory: List<ConversationTurn> = emptyList(),
     val showSavedHistory: Boolean = false,
+    val isRefreshing: Boolean = false,
     val sourceLanguage: String = TranslateLanguage.ENGLISH,
     val targetLanguage: String = TranslateLanguage.SPANISH,
     val isListening: Boolean = false,

@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.compose.material)
     
     // CameraX dependencies (still used directly in CameraScreen for preview)
     implementation(libs.androidx.camera.core)

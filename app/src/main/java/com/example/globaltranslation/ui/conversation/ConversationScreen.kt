@@ -11,6 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -27,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,7 +44,7 @@ import com.google.mlkit.nl.translate.TranslateLanguage
 /**
  * Main conversation screen for live translation.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.material.ExperimentalMaterialApi::class)
 @Composable
 fun ConversationScreen(
     modifier: Modifier = Modifier,
@@ -79,62 +83,69 @@ fun ConversationScreen(
         }
     }
     
-    Column(
-        modifier = modifier.fillMaxSize()
+    // Pull to refresh setup
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refreshConversationHistory
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pullRefresh(pullRefreshState)
     ) {
-        // Saved history toggle button
-        if (uiState.savedHistory.isNotEmpty()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Row(
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Show saved history when refreshing or when toggled
+            if ((uiState.showSavedHistory || uiState.isRefreshing) && uiState.savedHistory.isNotEmpty()) {
+                SavedHistorySection(
+                    savedHistory = uiState.savedHistory,
+                    onSpeakText = viewModel::speakText,
+                    onDelete = viewModel::deleteSavedConversation,
+                    onHide = viewModel::hideSavedHistory,
+                    isRefreshing = uiState.isRefreshing,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.toggleSavedHistory() }
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .heightIn(max = 300.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // Show pull hint when history is available but not shown
+            if (!uiState.showSavedHistory && !uiState.isRefreshing && uiState.savedHistory.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                    )
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
-                            Icons.Default.History,
-                            contentDescription = "History",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Pull down",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Saved History (${uiState.savedHistory.size})",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            text = "Pull down to view ${uiState.savedHistory.size} saved translations",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Icon(
-                        if (uiState.showSavedHistory) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (uiState.showSavedHistory) "Collapse" else "Expand",
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-        }
-        
-        // Expandable saved history
-        if (uiState.showSavedHistory && uiState.savedHistory.isNotEmpty()) {
-            SavedHistorySection(
-                savedHistory = uiState.savedHistory,
-                onSpeakText = viewModel::speakText,
-                onDelete = viewModel::deleteSavedConversation,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp) // Max height instead of weight for better display
-                    .padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
         
         // Warning banner for invalid language pair
         if (!uiState.isValidLanguagePair) {
@@ -207,24 +218,36 @@ fun ConversationScreen(
             modifier = Modifier.padding(16.dp)
         )
         
-        // Error display
-        uiState.error?.let { error ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
+            // Error display
+            uiState.error?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
+        
+        // Pull refresh indicator
+        PullRefreshIndicator(
+            refreshing = uiState.isRefreshing,
+            state = pullRefreshState,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(1f),
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
@@ -540,6 +563,8 @@ private fun SavedHistorySection(
     savedHistory: List<ConversationTurn>,
     onSpeakText: (String, String) -> Unit,
     onDelete: (Long) -> Unit,
+    onHide: () -> Unit,
+    isRefreshing: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -558,16 +583,45 @@ private fun SavedHistorySection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Saved Translations",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${savedHistory.size} items",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isRefreshing) "Refreshing..." else "Saved Translations",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (isRefreshing) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${savedHistory.size} items",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (!isRefreshing) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = onHide,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Hide history",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.height(8.dp))
