@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.globaltranslation.core.provider.TextToSpeechProvider
 import com.example.globaltranslation.core.provider.TranslationProvider
+import com.example.globaltranslation.core.repository.ConversationRepository
 import com.example.globaltranslation.model.ConversationTurn
 import com.google.mlkit.nl.translate.TranslateLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,11 +21,38 @@ import javax.inject.Inject
 @HiltViewModel
 class TextInputViewModel @Inject constructor(
     private val translationProvider: TranslationProvider,
-    private val ttsProvider: TextToSpeechProvider
+    private val ttsProvider: TextToSpeechProvider,
+    private val conversationRepository: ConversationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TextInputUiState())
     val uiState: StateFlow<TextInputUiState> = _uiState.asStateFlow()
+    
+    init {
+        // Load translation history from repository on startup
+        loadTranslationHistory()
+    }
+    
+    /**
+     * Loads translation history from the repository.
+     */
+    private fun loadTranslationHistory() {
+        viewModelScope.launch {
+            conversationRepository.getConversations().collect { savedConversations ->
+                // Convert ConversationTurn to TextTranslation
+                val textTranslations = savedConversations.map { turn ->
+                    TextTranslation(
+                        originalText = turn.originalText,
+                        translatedText = turn.translatedText,
+                        sourceLanguage = turn.sourceLang,
+                        targetLanguage = turn.targetLang,
+                        timestamp = turn.timestamp
+                    )
+                }
+                _uiState.value = _uiState.value.copy(translationHistory = textTranslations)
+            }
+        }
+    }
 
     /**
      * Updates the input text as user types.
@@ -42,6 +70,14 @@ class TextInputViewModel @Inject constructor(
         
         if (textToTranslate.isEmpty()) {
             _uiState.value = currentState.copy(error = "Please enter text to translate")
+            return
+        }
+        
+        // Validate language pair (ML Kit requires English as source or target)
+        if (!isValidLanguagePair(currentState.sourceLanguage, currentState.targetLanguage)) {
+            _uiState.value = currentState.copy(
+                error = "ML Kit requires English as source or target language. Please select English for one side."
+            )
             return
         }
 
@@ -75,6 +111,22 @@ class TextInputViewModel @Inject constructor(
                             translationHistory = updatedHistory,
                             isTranslating = false
                         )
+                        
+                        // Persist the translation to repository
+                        viewModelScope.launch {
+                            try {
+                                val turn = ConversationTurn(
+                                    originalText = translation.originalText,
+                                    translatedText = translation.translatedText,
+                                    sourceLang = translation.sourceLanguage,
+                                    targetLang = translation.targetLanguage,
+                                    timestamp = translation.timestamp
+                                )
+                                conversationRepository.saveConversation(turn)
+                            } catch (e: Exception) {
+                                // Persistence failure doesn't break the UI
+                            }
+                        }
                     },
                     onFailure = { exception ->
                         _uiState.value = currentState.copy(
@@ -164,6 +216,14 @@ class TextInputViewModel @Inject constructor(
         }
     }
     
+    /**
+     * Validates that at least one language is English (required for ML Kit).
+     * ML Kit only supports translation pairs with English.
+     */
+    private fun isValidLanguagePair(sourceLanguage: String, targetLanguage: String): Boolean {
+        return sourceLanguage == TranslateLanguage.ENGLISH || targetLanguage == TranslateLanguage.ENGLISH
+    }
+    
     override fun onCleared() {
         super.onCleared()
         ttsProvider.cleanup()
@@ -181,7 +241,13 @@ data class TextInputUiState(
     val translationHistory: List<TextTranslation> = emptyList(),
     val isTranslating: Boolean = false,
     val error: String? = null
-)
+) {
+    /**
+     * Validates that at least one language is English (required for ML Kit).
+     */
+    val isValidLanguagePair: Boolean
+        get() = sourceLanguage == TranslateLanguage.ENGLISH || targetLanguage == TranslateLanguage.ENGLISH
+}
 
 /**
  * Data class representing a text translation.

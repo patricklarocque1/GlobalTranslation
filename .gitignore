@@ -14,3 +14,12 @@ build/
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android/Gradle build artifacts
+**/build/
+**/bin/
+**/.gradle/
+**/out/
+
+# IDE-specific cursor directory
+.cursor/

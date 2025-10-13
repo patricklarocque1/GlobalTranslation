@@ -29,7 +29,7 @@ import com.example.globaltranslation.ui.camera.CameraScreen
 import com.example.globaltranslation.ui.conversation.ConversationScreen
 import com.example.globaltranslation.ui.languages.LanguageScreen
 import com.example.globaltranslation.ui.textinput.TextInputScreen
-import com.example.globaltranslation.ui.theme.GloabTranslationTheme
+import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            GloabTranslationTheme {
+            GlobalTranslationTheme {
                 GloabTranslationApp()
             }
         }
@@ -114,7 +114,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    GloabTranslationTheme {
+    GlobalTranslationTheme {
         Greeting("Android")
     }
 }

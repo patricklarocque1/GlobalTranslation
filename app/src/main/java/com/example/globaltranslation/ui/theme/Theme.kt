@@ -8,10 +8,12 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 /**
  * Material 3 Expressive Theme for GlobalTranslation.
@@ -22,7 +24,7 @@ import androidx.core.view.WindowCompat
  * @param content The composable content to apply the theme to
  */
 @Composable
-fun GloabTranslationTheme(
+fun GlobalTranslationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Disable dynamic color by default to maintain consistent lavender/purple brand
     dynamicColor: Boolean = false,
@@ -37,13 +39,20 @@ fun GloabTranslationTheme(
         else -> ExpressiveLightColors
     }
     
-    // Update system bars to match theme
+    // Update system bars to match theme (modern edge-to-edge approach)
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            
+            // Enable edge-to-edge display
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            
+            // Update status bar appearance based on theme
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

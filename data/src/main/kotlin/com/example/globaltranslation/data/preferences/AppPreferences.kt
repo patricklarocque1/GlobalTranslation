@@ -1,0 +1,106 @@
+package com.example.globaltranslation.data.preferences
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
+
+private val Context.appPreferencesDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "app_preferences"
+)
+
+/**
+ * DataStore-backed app preferences for settings and version tracking.
+ * Handles app update detection and migration.
+ */
+@Singleton
+class AppPreferences @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    private val dataStore = context.appPreferencesDataStore
+    
+    companion object {
+        private val LAST_VERSION_CODE_KEY = intPreferencesKey("last_version_code")
+        private val ALLOW_CELLULAR_DOWNLOADS_KEY = booleanPreferencesKey("allow_cellular_downloads")
+        private val FIRST_LAUNCH_KEY = booleanPreferencesKey("first_launch")
+    }
+    
+    /**
+     * Flow of the last known app version code.
+     */
+    val lastVersionCode: Flow<Int> = dataStore.data.map { preferences: Preferences ->
+        preferences[LAST_VERSION_CODE_KEY] ?: 0
+    }
+    
+    /**
+     * Flow of cellular download preference.
+     */
+    val allowCellularDownloads: Flow<Boolean> = dataStore.data.map { preferences: Preferences ->
+        preferences[ALLOW_CELLULAR_DOWNLOADS_KEY] ?: false
+    }
+    
+    /**
+     * Flow of first launch state.
+     */
+    val isFirstLaunch: Flow<Boolean> = dataStore.data.map { preferences: Preferences ->
+        preferences[FIRST_LAUNCH_KEY] ?: true
+    }
+    
+    /**
+     * Updates the stored version code to the current version.
+     * @param versionCode Current app version code
+     */
+    suspend fun updateVersionCode(versionCode: Int) {
+        dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
+            preferences[LAST_VERSION_CODE_KEY] = versionCode
+        }
+    }
+    
+    /**
+     * Sets the cellular download preference.
+     * @param allow Whether to allow downloads on cellular network
+     */
+    suspend fun setAllowCellularDownloads(allow: Boolean) {
+        dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
+            preferences[ALLOW_CELLULAR_DOWNLOADS_KEY] = allow
+        }
+    }
+    
+    /**
+     * Marks that the app has been launched (no longer first launch).
+     */
+    suspend fun markLaunched() {
+        dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
+            preferences[FIRST_LAUNCH_KEY] = false
+        }
+    }
+    
+    /**
+     * Checks if the app has been updated since the last launch.
+     * @param currentVersionCode Current app version code
+     * @return true if app has been updated
+     */
+    suspend fun hasAppBeenUpdated(currentVersionCode: Int): Boolean {
+        val lastVersion: Int = lastVersionCode.first()
+        return lastVersion != 0 && lastVersion != currentVersionCode
+    }
+    
+    /**
+     * Clears all app preferences (for debugging/testing).
+     */
+    suspend fun clearAll() {
+        dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
+            preferences.clear()
+        }
+    }
+}
+

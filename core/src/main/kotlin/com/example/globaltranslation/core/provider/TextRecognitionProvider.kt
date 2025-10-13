@@ -8,9 +8,10 @@ interface TextRecognitionProvider {
     /**
      * Recognizes text from image data.
      * @param imageData Platform-specific image data (to be wrapped)
+     * @param languageCode Language code to select appropriate script recognizer (e.g., "zh", "ja", "ko", "hi")
      * @return Result with detected text structure or error
      */
-    suspend fun recognizeText(imageData: Any): Result<DetectedText>
+    suspend fun recognizeText(imageData: Any, languageCode: String? = null): Result<DetectedText>
     
     /**
      * Cleans up OCR resources.

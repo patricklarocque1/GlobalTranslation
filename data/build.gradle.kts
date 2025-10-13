@@ -35,12 +35,19 @@ dependencies {
     // ML Kit
     implementation(libs.mlkit.translate)
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.text.recognition.chinese)
+    implementation(libs.mlkit.text.recognition.japanese)
+    implementation(libs.mlkit.text.recognition.korean)
+    implementation(libs.mlkit.text.recognition.devanagari)
     implementation(libs.kotlinx.coroutines.play.services)
     
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
     
     // Hilt
     implementation(libs.hilt.android)

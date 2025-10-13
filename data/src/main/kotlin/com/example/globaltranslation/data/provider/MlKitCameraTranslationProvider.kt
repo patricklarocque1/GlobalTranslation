@@ -31,8 +31,8 @@ class MlKitCameraTranslationProvider @Inject constructor(
         }
         
         return try {
-            // Step 1: Recognize text
-            val detectedText = textRecognitionProvider.recognizeText(imageData)
+            // Step 1: Recognize text with appropriate script recognizer
+            val detectedText = textRecognitionProvider.recognizeText(imageData, sourceLanguage)
                 .getOrThrow()
             
             if (detectedText.textBlocks.isEmpty()) {

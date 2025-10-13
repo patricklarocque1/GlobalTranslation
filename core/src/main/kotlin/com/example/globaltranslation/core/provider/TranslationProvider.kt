@@ -1,5 +1,7 @@
 package com.example.globaltranslation.core.provider
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Interface for translation services.
  * Abstracts the underlying translation implementation (ML Kit, cloud APIs, etc.)
@@ -26,9 +28,10 @@ interface TranslationProvider {
      * Downloads translation models for the given language pair.
      * @param from Source language code
      * @param to Target language code
+     * @param requireWifi If true, only download on WiFi. If false, allow cellular downloads.
      * @return Result indicating success or failure
      */
-    suspend fun downloadModels(from: String, to: String): Result<Unit>
+    suspend fun downloadModels(from: String, to: String, requireWifi: Boolean = true): Result<Unit>
     
     /**
      * Deletes a downloaded translation model.

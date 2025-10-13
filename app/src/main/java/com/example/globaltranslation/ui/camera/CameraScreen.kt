@@ -20,8 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
@@ -149,11 +149,12 @@ private fun CameraPreview(
         camera?.cameraControl?.enableTorch(isFlashOn)
     }
     
-    DisposableEffect(Unit) {
+    DisposableEffect(lifecycleOwner) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        var cameraProvider: ProcessCameraProvider? = null
         
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
+            cameraProvider = cameraProviderFuture.get()
             
             // Preview use case
             val preview = Preview.Builder().build().also {
@@ -169,8 +170,8 @@ private fun CameraPreview(
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             
             try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(
+                cameraProvider?.unbindAll()
+                camera = cameraProvider?.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
                     preview,
@@ -187,7 +188,14 @@ private fun CameraPreview(
         }, ContextCompat.getMainExecutor(context))
         
         onDispose {
-            camera = null
+            // Properly unbind all use cases and release camera
+            try {
+                camera?.cameraControl?.enableTorch(false) // Turn off flash
+                cameraProvider?.unbindAll()
+                camera = null
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
     

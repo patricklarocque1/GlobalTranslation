@@ -32,6 +32,24 @@ class ConversationViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ConversationUiState())
     val uiState: StateFlow<ConversationUiState> = _uiState.asStateFlow()
+    
+    init {
+        // Load conversation history from repository on startup
+        loadConversationHistory()
+    }
+    
+    /**
+     * Loads conversation history from the repository.
+     */
+    private fun loadConversationHistory() {
+        viewModelScope.launch {
+            conversationRepository.getConversations().collect { savedConversations ->
+                _uiState.value = _uiState.value.copy(
+                    savedHistory = savedConversations
+                )
+            }
+        }
+    }
 
     /**
      * Starts listening for speech input in the specified language.
@@ -106,6 +124,14 @@ class ConversationViewModel @Inject constructor(
      */
     private fun translateAndAddToConversation(text: String, sourceLanguage: String) {
         val targetLanguage = getTargetLanguage(sourceLanguage)
+        
+        // Validate language pair (ML Kit requires English as source or target)
+        if (!isValidLanguagePair(sourceLanguage, targetLanguage)) {
+            _uiState.value = _uiState.value.copy(
+                error = "ML Kit requires English as source or target language. Please select English for one side."
+            )
+            return
+        }
         
         _uiState.value = _uiState.value.copy(isTranslating = true)
 
@@ -215,6 +241,30 @@ class ConversationViewModel @Inject constructor(
             autoPlayTranslation = !_uiState.value.autoPlayTranslation
         )
     }
+    
+    /**
+     * Toggles the saved history drawer visibility.
+     */
+    fun toggleSavedHistory() {
+        _uiState.value = _uiState.value.copy(
+            showSavedHistory = !_uiState.value.showSavedHistory
+        )
+    }
+    
+    /**
+     * Deletes a saved conversation turn.
+     */
+    fun deleteSavedConversation(timestamp: Long) {
+        viewModelScope.launch {
+            try {
+                conversationRepository.deleteConversation(timestamp)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to delete conversation: ${e.message}"
+                )
+            }
+        }
+    }
 
     /**
      * Clears the conversation history.
@@ -268,6 +318,14 @@ class ConversationViewModel @Inject constructor(
             else -> "en-US"
         }
     }
+    
+    /**
+     * Validates that at least one language is English (required for ML Kit).
+     * ML Kit only supports translation pairs with English.
+     */
+    private fun isValidLanguagePair(sourceLanguage: String, targetLanguage: String): Boolean {
+        return sourceLanguage == TranslateLanguage.ENGLISH || targetLanguage == TranslateLanguage.ENGLISH
+    }
 
     override fun onCleared() {
         super.onCleared()
@@ -281,6 +339,8 @@ class ConversationViewModel @Inject constructor(
  */
 data class ConversationUiState(
     val conversationHistory: List<ConversationTurn> = emptyList(),
+    val savedHistory: List<ConversationTurn> = emptyList(),
+    val showSavedHistory: Boolean = false,
     val sourceLanguage: String = TranslateLanguage.ENGLISH,
     val targetLanguage: String = TranslateLanguage.SPANISH,
     val isListening: Boolean = false,
@@ -291,4 +351,10 @@ data class ConversationUiState(
     val isSpeaking: Boolean = false,
     val autoPlayTranslation: Boolean = true,
     val error: String? = null
-)
+) {
+    /**
+     * Validates that at least one language is English (required for ML Kit).
+     */
+    val isValidLanguagePair: Boolean
+        get() = sourceLanguage == TranslateLanguage.ENGLISH || targetLanguage == TranslateLanguage.ENGLISH
+}

@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.globaltranslation.ui.theme.GloabTranslationTheme
+import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
 
 /**
@@ -76,9 +76,77 @@ fun LanguageScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Download language models to enable offline translation. All models are paired with English (e.g., English↔Spanish). Requires WiFi for first download.",
+                    text = "Download language models to enable offline translation. All models are paired with English (e.g., English↔Spanish).",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                // Network status indicator
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        when (uiState.networkState) {
+                            is com.example.globaltranslation.data.network.NetworkState.WiFi -> Icons.Default.Wifi
+                            is com.example.globaltranslation.data.network.NetworkState.Cellular -> Icons.Default.SignalCellularAlt
+                            else -> Icons.Default.SignalWifiOff
+                        },
+                        contentDescription = "Network status",
+                        modifier = Modifier.size(16.dp),
+                        tint = when (uiState.networkState) {
+                            is com.example.globaltranslation.data.network.NetworkState.WiFi -> MaterialTheme.colorScheme.primary
+                            is com.example.globaltranslation.data.network.NetworkState.Cellular -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.error
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = when (uiState.networkState) {
+                            is com.example.globaltranslation.data.network.NetworkState.WiFi -> "WiFi connected"
+                            is com.example.globaltranslation.data.network.NetworkState.Cellular -> "Cellular connection"
+                            is com.example.globaltranslation.data.network.NetworkState.Connected -> "Connected"
+                            else -> "No connection"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Settings card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Allow Cellular Downloads",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = if (uiState.allowCellularDownloads) 
+                            "Models can download on mobile data" 
+                        else 
+                            "Models require WiFi connection",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                Switch(
+                    checked = uiState.allowCellularDownloads,
+                    onCheckedChange = { viewModel.toggleCellularDownloads() }
                 )
             }
         }
@@ -98,13 +166,14 @@ fun LanguageScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                items(uiState.availableLanguages) { language ->
-                    LanguageModelItem(
-                        language = language,
-                        onDownload = { viewModel.downloadLanguage(language.code) },
-                        onDelete = { viewModel.deleteLanguage(language.code) }
-                    )
-                }
+            items(uiState.availableLanguages) { language ->
+                LanguageModelItem(
+                    language = language,
+                    onDownload = { viewModel.downloadLanguage(language.code) },
+                    onDelete = { viewModel.deleteLanguage(language.code) },
+                    onCancel = { viewModel.cancelDownload(language.code) }
+                )
+            }
             }
         }
         
@@ -176,112 +245,194 @@ private fun LanguageModelItem(
     language: LanguageModel,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Language flag or icon placeholder
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(end = 12.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        Icons.Default.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                Column {
-                    Text(
-                        text = language.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = when {
-                            language.isDownloaded -> "Downloaded"
-                            language.isDownloading -> "Downloading..."
-                            else -> "Not downloaded"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when {
-                            language.isDownloaded -> MaterialTheme.colorScheme.primary
-                            language.isDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-            
-            // Action button
-            when {
-                language.code == TranslateLanguage.ENGLISH -> {
-                    // English is always available
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = "Always available",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                language.isDownloading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-                language.isDownloaded -> {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    // Language flag or icon placeholder
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(end = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = "Downloaded",
+                            Icons.Default.Language,
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(
-                            onClick = onDelete
+                    }
+                    
+                    Column {
+                        Text(
+                            text = language.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = when {
+                                language.isDownloaded -> "Downloaded"
+                                language.isDownloading -> "Downloading..."
+                                else -> "Not downloaded"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = when {
+                                language.isDownloaded -> MaterialTheme.colorScheme.primary
+                                language.isDownloading -> MaterialTheme.colorScheme.secondary
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
+                
+                // Action button
+                when {
+                    language.code == TranslateLanguage.ENGLISH -> {
+                        // English is always available
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = "Always available",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    language.isDownloading -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(onClick = onCancel) {
+                                Icon(
+                                    Icons.Default.Cancel,
+                                    contentDescription = "Cancel",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Cancel")
+                            }
+                        }
+                    }
+                    language.isDownloaded -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                Icons.Default.Delete,
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Downloaded",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(
+                                onClick = onDelete
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Remove")
+                            }
+                        }
+                    }
+                    else -> {
+                        Button(
+                            onClick = onDownload,
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Download,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Remove")
+                            Text("Download")
                         }
                     }
                 }
-                else -> {
-                    Button(
-                        onClick = onDownload,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+            }
+        
+        // Show progress bar with actual percentage and status
+        if (language.isDownloading || language.downloadStatus != com.example.globaltranslation.ui.languages.DownloadStatus.IDLE) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (language.downloadStatus) {
+                            com.example.globaltranslation.ui.languages.DownloadStatus.PREPARING -> "Preparing download..."
+                            com.example.globaltranslation.ui.languages.DownloadStatus.DOWNLOADING -> "Downloading model..."
+                            com.example.globaltranslation.ui.languages.DownloadStatus.FINALIZING -> "Finalizing..."
+                            com.example.globaltranslation.ui.languages.DownloadStatus.COMPLETE -> "Complete!"
+                            com.example.globaltranslation.ui.languages.DownloadStatus.PAUSED -> "Paused (waiting for network)"
+                            com.example.globaltranslation.ui.languages.DownloadStatus.FAILED -> "Failed"
+                            else -> "Downloading..."
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when (language.downloadStatus) {
+                            com.example.globaltranslation.ui.languages.DownloadStatus.COMPLETE -> MaterialTheme.colorScheme.primary
+                            com.example.globaltranslation.ui.languages.DownloadStatus.PAUSED -> MaterialTheme.colorScheme.tertiary
+                            com.example.globaltranslation.ui.languages.DownloadStatus.FAILED -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.secondary
+                        }
+                    )
+                    
+                    // Show percentage if available
+                    if (language.downloadProgress != null) {
+                        Text(
+                            text = "${(language.downloadProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Download")
+                    } else {
+                        Text(
+                            text = "~10-30 MB",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // Progress bar - determinate if we have progress, indeterminate otherwise
+                if (language.downloadProgress != null) {
+                    LinearProgressIndicator(
+                        progress = { language.downloadProgress },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = when (language.downloadStatus) {
+                            com.example.globaltranslation.ui.languages.DownloadStatus.COMPLETE -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.secondary
+                        }
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
+        }
         }
     }
 }
@@ -289,7 +440,7 @@ private fun LanguageModelItem(
 @PreviewScreenSizes
 @Composable
 private fun LanguageScreenPreview() {
-    GloabTranslationTheme {
+    GlobalTranslationTheme {
         Surface {
             // Preview would go here
         }

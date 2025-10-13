@@ -6,16 +6,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Input
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.AnnotatedString
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -24,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.ui.components.LanguagePickerButton
-import com.example.globaltranslation.ui.theme.GloabTranslationTheme
+import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
 
 /**
@@ -38,7 +40,7 @@ fun TextInputScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
-    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
     
     // Show error snackbar
     uiState.error?.let { error ->
@@ -65,6 +67,34 @@ fun TextInputScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
+        // Warning banner for invalid language pair
+        if (!uiState.isValidLanguagePair) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "ML Kit requires English as source or target language",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        
         // Input section
         TextInputCard(
             inputText = uiState.inputText,
@@ -75,6 +105,7 @@ fun TextInputScreen(
             },
             onClear = viewModel::clearInput,
             isTranslating = uiState.isTranslating,
+            isValidLanguagePair = uiState.isValidLanguagePair,
             modifier = Modifier.fillMaxWidth()
         )
         
@@ -91,7 +122,7 @@ fun TextInputScreen(
                     viewModel.speakText(translation.translatedText, translation.targetLanguage)
                 },
                 onCopyTranslation = {
-                    clipboardManager.setText(AnnotatedString(translation.translatedText))
+                    copyToClipboard(context, translation.translatedText, "translation")
                 },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -125,7 +156,7 @@ fun TextInputScreen(
                         translation = translation,
                         onCopyToInput = { viewModel.copyToInput(translation) },
                         onCopyTranslation = {
-                            clipboardManager.setText(AnnotatedString(translation.translatedText))
+                            copyToClipboard(context, translation.translatedText, "translation")
                         }
                     )
                 }
@@ -204,6 +235,7 @@ private fun TextInputCard(
     onTranslate: () -> Unit,
     onClear: () -> Unit,
     isTranslating: Boolean,
+    isValidLanguagePair: Boolean,
     modifier: Modifier = Modifier
 ) {
     Card(modifier = modifier) {
@@ -245,7 +277,7 @@ private fun TextInputCard(
             ) {
                 Button(
                     onClick = onTranslate,
-                    enabled = inputText.isNotEmpty() && !isTranslating,
+                    enabled = inputText.isNotEmpty() && !isTranslating && isValidLanguagePair,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isTranslating) {
@@ -396,7 +428,7 @@ private fun TranslationHistoryItem(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            Icons.Default.Input,
+                            Icons.AutoMirrored.Filled.Input,
                             contentDescription = "Copy to input",
                             modifier = Modifier.size(16.dp)
                         )
@@ -439,10 +471,20 @@ private fun getLanguageDisplayName(languageCode: String): String {
     }
 }
 
+/**
+ * Copies text to the system clipboard using the modern ClipboardManager API.
+ * This is the non-deprecated way to interact with the clipboard.
+ */
+private fun copyToClipboard(context: Context, text: String, label: String = "text") {
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText(label, text)
+    clipboardManager.setPrimaryClip(clip)
+}
+
 @PreviewScreenSizes
 @Composable
 private fun TextInputScreenPreview() {
-    GloabTranslationTheme {
+    GlobalTranslationTheme {
         Surface {
             // Preview would go here with mock data
         }

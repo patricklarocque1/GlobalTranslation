@@ -6,26 +6,38 @@ import com.example.globaltranslation.core.provider.TextBlock as CoreTextBlock
 /**
  * Utility for filtering noise and grouping text blocks intelligently.
  * Pure Kotlin logic with no Android dependencies - fully testable.
+ * Supports multi-script text (Latin, CJK, Devanagari, etc.)
  */
 object TextBlockGroupingUtil {
     
     /**
      * Filters noise and groups nearby text blocks for better translation accuracy.
      * Uses advanced heuristics to filter out technical jargon, code, and gibberish.
+     * Script-aware for non-Latin text (Chinese, Japanese, Korean, Devanagari).
      */
     fun filterAndGroup(blocks: List<CoreTextBlock>): List<CoreTextBlock> {
         // Step 1: Advanced noise filtering
         val filteredBlocks = blocks.filter { block ->
             val text = block.text.trim()
             
+            // Detect the script of the text
+            val script = detectScript(text)
+            
             // Basic size checks
             if (text.length < 3) return@filter false
             if (block.boundingBox.width < 30 || block.boundingBox.height < 15) return@filter false
             
-            // Must contain letters
-            if (!text.any { it.isLetter() }) return@filter false
+            // Must contain letters (or CJK characters)
+            if (!text.any { it.isLetter() || isCJKCharacter(it) || isDevanagariCharacter(it) }) return@filter false
             
-            // Advanced filters:
+            // For non-Latin scripts, skip Latin-specific filters
+            if (script == Script.CJK || script == Script.DEVANAGARI) {
+                // Only apply basic filters for non-Latin scripts
+                val symbolRatio = text.count { !it.isLetterOrDigit() && !it.isWhitespace() && !isCJKCharacter(it) && !isDevanagariCharacter(it) } / text.length.toFloat()
+                return@filter symbolRatio <= 0.3
+            }
+            
+            // Latin-specific advanced filters:
             // 1. Filter code-like patterns (CamelCase, snake_case, file paths)
             if (isCodeLike(text)) return@filter false
             
@@ -226,6 +238,64 @@ object TextBlockGroupingUtil {
             boundingBox = bounds,
             lines = combinedLines
         )
+    }
+    
+    /**
+     * Enum representing different text scripts.
+     */
+    private enum class Script {
+        LATIN,
+        CJK,         // Chinese, Japanese, Korean
+        DEVANAGARI,  // Hindi, Bengali, etc.
+        OTHER
+    }
+    
+    /**
+     * Detects the primary script of the text.
+     */
+    private fun detectScript(text: String): Script {
+        var cjkCount = 0
+        var devanagariCount = 0
+        var latinCount = 0
+        
+        for (char in text) {
+            when {
+                isCJKCharacter(char) -> cjkCount++
+                isDevanagariCharacter(char) -> devanagariCount++
+                char.isLetter() -> latinCount++
+            }
+        }
+        
+        val total = cjkCount + devanagariCount + latinCount
+        if (total == 0) return Script.OTHER
+        
+        return when {
+            cjkCount > total / 2 -> Script.CJK
+            devanagariCount > total / 2 -> Script.DEVANAGARI
+            latinCount > total / 2 -> Script.LATIN
+            else -> Script.OTHER
+        }
+    }
+    
+    /**
+     * Checks if a character is CJK (Chinese, Japanese, Korean).
+     */
+    private fun isCJKCharacter(char: Char): Boolean {
+        val codePoint = char.code
+        return codePoint in 0x4E00..0x9FFF ||  // CJK Unified Ideographs
+               codePoint in 0x3400..0x4DBF ||  // CJK Unified Ideographs Extension A
+               codePoint in 0x3040..0x309F ||  // Hiragana
+               codePoint in 0x30A0..0x30FF ||  // Katakana
+               codePoint in 0xAC00..0xD7AF     // Hangul Syllables
+    }
+    
+    /**
+     * Checks if a character is Devanagari script (Hindi, Bengali, etc.).
+     */
+    private fun isDevanagariCharacter(char: Char): Boolean {
+        val codePoint = char.code
+        return codePoint in 0x0900..0x097F ||  // Devanagari
+               codePoint in 0x0980..0x09FF      // Bengali
     }
 }
 

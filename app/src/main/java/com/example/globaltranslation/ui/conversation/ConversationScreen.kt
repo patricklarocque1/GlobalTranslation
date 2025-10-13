@@ -1,6 +1,7 @@
 package com.example.globaltranslation.ui.conversation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -32,7 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.R
 import com.example.globaltranslation.model.ConversationTurn
 import com.example.globaltranslation.ui.components.LanguagePickerButton
-import com.example.globaltranslation.ui.theme.GloabTranslationTheme
+import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
 
 /**
@@ -80,6 +82,89 @@ fun ConversationScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
+        // Saved history toggle button
+        if (uiState.savedHistory.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.toggleSavedHistory() }
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.History,
+                            contentDescription = "History",
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Saved History (${uiState.savedHistory.size})",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                    Icon(
+                        if (uiState.showSavedHistory) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (uiState.showSavedHistory) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
+        
+        // Expandable saved history
+        if (uiState.showSavedHistory && uiState.savedHistory.isNotEmpty()) {
+            SavedHistorySection(
+                savedHistory = uiState.savedHistory,
+                onSpeakText = viewModel::speakText,
+                onDelete = viewModel::deleteSavedConversation,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp) // Max height instead of weight for better display
+                    .padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        
+        // Warning banner for invalid language pair
+        if (!uiState.isValidLanguagePair) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "ML Kit requires English as source or target language",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+        
         // Language selection and controls
         LanguageSelectionRow(
             sourceLanguage = uiState.sourceLanguage,
@@ -109,6 +194,7 @@ fun ConversationScreen(
             partialText = uiState.partialSpeechText,
             isTranslating = uiState.isTranslating,
             hasPermission = hasAudioPermission,
+            isValidLanguagePair = uiState.isValidLanguagePair,
             onStartListening = { 
                 if (hasAudioPermission) {
                     viewModel.startListening(uiState.sourceLanguage)
@@ -192,7 +278,7 @@ private fun LanguageSelectionRow(
             // Auto-play toggle
             IconButton(onClick = onAutoPlayToggle) {
                 Icon(
-                    if (autoPlayEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.VolumeOff,
+                    if (autoPlayEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                     contentDescription = if (autoPlayEnabled) "Auto-play enabled" else "Auto-play disabled",
                     tint = if (autoPlayEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -332,6 +418,7 @@ private fun SpeechInputArea(
     partialText: String,
     isTranslating: Boolean,
     hasPermission: Boolean,
+    isValidLanguagePair: Boolean,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
     onClearHistory: () -> Unit,
@@ -363,6 +450,7 @@ private fun SpeechInputArea(
         // Status text
         Text(
             text = when {
+                !isValidLanguagePair -> "Invalid language pair (English required)"
                 !hasPermission -> "Microphone permission required"
                 isTranslating -> "Translating..."
                 isDetectingSpeech -> "Listening..."
@@ -371,7 +459,7 @@ private fun SpeechInputArea(
                 else -> "Tap to start speaking"
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = if (hasPermission) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
+            color = if (isValidLanguagePair && hasPermission) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
@@ -395,6 +483,7 @@ private fun SpeechInputArea(
                 onClick = if (isListening) onStopListening else onStartListening,
                 modifier = Modifier.size(72.dp),
                 containerColor = when {
+                    !isValidLanguagePair -> MaterialTheme.colorScheme.errorContainer
                     !hasPermission -> MaterialTheme.colorScheme.error
                     isDetectingSpeech -> MaterialTheme.colorScheme.error
                     isListening -> MaterialTheme.colorScheme.primary
@@ -402,6 +491,14 @@ private fun SpeechInputArea(
                 }
             ) {
                 when {
+                    !isValidLanguagePair -> {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = "Invalid language pair",
+                            modifier = Modifier.size(32.dp),
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                     isTranslating -> {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
@@ -438,6 +535,154 @@ private fun SpeechInputArea(
     }
 }
 
+@Composable
+private fun SavedHistorySection(
+    savedHistory: List<ConversationTurn>,
+    onSpeakText: (String, String) -> Unit,
+    onDelete: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Saved Translations",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${savedHistory.size} items",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            HorizontalDivider()
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Scrollable list of saved items
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(
+                    items = savedHistory,
+                    key = { it.timestamp }
+                ) { turn ->
+                    SavedHistoryItem(
+                        turn = turn,
+                        onSpeakOriginal = { onSpeakText(turn.originalText, turn.sourceLang) },
+                        onSpeakTranslation = { onSpeakText(turn.translatedText, turn.targetLang) },
+                        onDelete = { onDelete(turn.timestamp) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavedHistoryItem(
+    turn: ConversationTurn,
+    onSpeakOriginal: () -> Unit,
+    onSpeakTranslation: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            // Original text with delete button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = getLanguageDisplayName(turn.sourceLang),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = turn.originalText,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                Row {
+                    IconButton(onClick = onSpeakOriginal) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = "Speak",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+            
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            
+            // Translated text
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = getLanguageDisplayName(turn.targetLang),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    Text(
+                        text = turn.translatedText,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                IconButton(onClick = onSpeakTranslation) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = "Speak translation",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+    }
+}
+
 // Helper function to convert language codes to display names
 private fun getLanguageDisplayName(languageCode: String): String {
     return when (languageCode) {
@@ -460,7 +705,7 @@ private fun getLanguageDisplayName(languageCode: String): String {
 @PreviewScreenSizes
 @Composable
 private fun ConversationScreenPreview() {
-    GloabTranslationTheme {
+    GlobalTranslationTheme {
         Surface {
             // Preview with mock data would go here
             Box(

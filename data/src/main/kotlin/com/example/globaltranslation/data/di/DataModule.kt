@@ -28,7 +28,10 @@ object DataModule {
             ConversationDatabase::class.java,
             "conversation_database"
         )
-        .fallbackToDestructiveMigration() // For development - remove in production
+        // Use destructive migration only on downgrade (safer for production)
+        .fallbackToDestructiveMigrationOnDowngrade()
+        // Add migrations here as schema evolves
+        // .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()
     }
     
