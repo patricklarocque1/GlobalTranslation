@@ -19,9 +19,10 @@ import javax.inject.Singleton
 /**
  * Monitors network connectivity changes.
  * Provides Flow of network state and WiFi availability.
+ * Open for testing - allows fake implementations to override behavior.
  */
 @Singleton
-class NetworkMonitor @Inject constructor(
+open class NetworkMonitor @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -44,7 +45,7 @@ class NetworkMonitor @Inject constructor(
     /**
      * Flow that emits network connectivity state.
      */
-    val networkState: Flow<NetworkState> = callbackFlow {
+    open val networkState: Flow<NetworkState> = callbackFlow {
         // Check permission first
         if (!hasNetworkStatePermission()) {
             trySend(NetworkState.Disconnected)
@@ -86,7 +87,7 @@ class NetworkMonitor @Inject constructor(
     /**
      * Gets the current network state.
      */
-    fun getCurrentNetworkState(): NetworkState {
+    open fun getCurrentNetworkState(): NetworkState {
         // Check permission first
         if (!hasNetworkStatePermission()) {
             return NetworkState.Disconnected
@@ -107,14 +108,14 @@ class NetworkMonitor @Inject constructor(
     /**
      * Checks if device is connected to WiFi.
      */
-    fun isOnWiFi(): Boolean {
+    open fun isOnWiFi(): Boolean {
         return getCurrentNetworkState() == NetworkState.WiFi
     }
     
     /**
      * Checks if device has any network connection.
      */
-    fun isConnected(): Boolean {
+    open fun isConnected(): Boolean {
         return getCurrentNetworkState() != NetworkState.Disconnected
     }
 }

@@ -30,10 +30,21 @@ class LanguageScreenTest {
     @Inject
     lateinit var fakeTranslationProvider: FakeTranslationProvider
     
+    @Inject
+    lateinit var appPreferences: com.example.globaltranslation.data.preferences.AppPreferences
+    
+    @Inject
+    lateinit var networkMonitor: com.example.globaltranslation.data.network.NetworkMonitor
+    
     @Before
     fun setup() {
         hiltRule.inject()
         fakeTranslationProvider.modelsDownloaded = false
+        
+        // Reset preferences to default state to prevent test pollution
+        kotlinx.coroutines.runBlocking {
+            appPreferences.clearAll()
+        }
         
         // Navigate to Languages tab
         composeTestRule.onNodeWithText("Languages").performClick()

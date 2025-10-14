@@ -21,9 +21,10 @@ private val Context.appPreferencesDataStore: DataStore<Preferences> by preferenc
 /**
  * DataStore-backed app preferences for settings and version tracking.
  * Handles app update detection and migration.
+ * Open for testing - allows fake implementations to override behavior.
  */
 @Singleton
-class AppPreferences @Inject constructor(
+open class AppPreferences @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val dataStore = context.appPreferencesDataStore
@@ -37,21 +38,21 @@ class AppPreferences @Inject constructor(
     /**
      * Flow of the last known app version code.
      */
-    val lastVersionCode: Flow<Int> = dataStore.data.map { preferences: Preferences ->
+    open val lastVersionCode: Flow<Int> = dataStore.data.map { preferences: Preferences ->
         preferences[LAST_VERSION_CODE_KEY] ?: 0
     }
     
     /**
      * Flow of cellular download preference.
      */
-    val allowCellularDownloads: Flow<Boolean> = dataStore.data.map { preferences: Preferences ->
+    open val allowCellularDownloads: Flow<Boolean> = dataStore.data.map { preferences: Preferences ->
         preferences[ALLOW_CELLULAR_DOWNLOADS_KEY] ?: false
     }
     
     /**
      * Flow of first launch state.
      */
-    val isFirstLaunch: Flow<Boolean> = dataStore.data.map { preferences: Preferences ->
+    open val isFirstLaunch: Flow<Boolean> = dataStore.data.map { preferences: Preferences ->
         preferences[FIRST_LAUNCH_KEY] ?: true
     }
     
@@ -59,7 +60,7 @@ class AppPreferences @Inject constructor(
      * Updates the stored version code to the current version.
      * @param versionCode Current app version code
      */
-    suspend fun updateVersionCode(versionCode: Int) {
+    open suspend fun updateVersionCode(versionCode: Int) {
         dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
             preferences[LAST_VERSION_CODE_KEY] = versionCode
         }
@@ -69,7 +70,7 @@ class AppPreferences @Inject constructor(
      * Sets the cellular download preference.
      * @param allow Whether to allow downloads on cellular network
      */
-    suspend fun setAllowCellularDownloads(allow: Boolean) {
+    open suspend fun setAllowCellularDownloads(allow: Boolean) {
         dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
             preferences[ALLOW_CELLULAR_DOWNLOADS_KEY] = allow
         }
@@ -78,7 +79,7 @@ class AppPreferences @Inject constructor(
     /**
      * Marks that the app has been launched (no longer first launch).
      */
-    suspend fun markLaunched() {
+    open suspend fun markLaunched() {
         dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
             preferences[FIRST_LAUNCH_KEY] = false
         }
@@ -89,7 +90,7 @@ class AppPreferences @Inject constructor(
      * @param currentVersionCode Current app version code
      * @return true if app has been updated
      */
-    suspend fun hasAppBeenUpdated(currentVersionCode: Int): Boolean {
+    open suspend fun hasAppBeenUpdated(currentVersionCode: Int): Boolean {
         val lastVersion: Int = lastVersionCode.first()
         return lastVersion != 0 && lastVersion != currentVersionCode
     }
@@ -97,7 +98,7 @@ class AppPreferences @Inject constructor(
     /**
      * Clears all app preferences (for debugging/testing).
      */
-    suspend fun clearAll() {
+    open suspend fun clearAll() {
         dataStore.edit { preferences: androidx.datastore.preferences.core.MutablePreferences ->
             preferences.clear()
         }
