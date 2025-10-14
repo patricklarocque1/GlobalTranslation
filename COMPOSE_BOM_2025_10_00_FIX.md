@@ -1,7 +1,20 @@
 # Fix for Compose BOM 2025.10.00 Material3 TextField Test Failures
 
-## Issue Summary
-The `TextInputScreenTest` was failing with errors like:
+## Latest Fix (Updated)
+The tests were failing with:
+```
+java.lang.AssertionError: Failed to assert the following: (Text + EditableText = [])
+Semantics of the node:
+```
+
+**Root Cause**: When using `assertTextEquals(..., includeEditableText = true)` on an `OutlinedTextField` with a label, you must provide BOTH the label text AND the editable text as parameters, because Material3 includes the label in the Text semantics.
+
+**Solution**: Changed from `assertTextEquals("", includeEditableText = true)` to `assertTextEquals("Enter text to translate", "", includeEditableText = true)`
+
+---
+
+## Previous Issue Summary
+The `TextInputScreenTest` was initially failing with errors like:
 ```
 AssertionError: Failed: assertExists.
 Reason: Expected exactly '1' node but could not find any node that satisfies: 
