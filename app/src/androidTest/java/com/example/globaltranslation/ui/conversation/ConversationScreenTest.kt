@@ -58,10 +58,10 @@ class ConversationScreenTest {
         // Reset fakes to default state
         fakeTranslationProvider.shouldSucceed = true
         fakeSpeechProvider.shouldSucceed = true
-        fakeRepository.clearConversations()
         
         // Reset preferences to prevent test pollution
         kotlinx.coroutines.runBlocking {
+            fakeRepository.clearAll()
             appPreferences.clearAll()
         }
     }
