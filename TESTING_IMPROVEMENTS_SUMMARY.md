@@ -64,10 +64,10 @@ composeTestRule
     .assertExists()
 
 // NEW APPROACH (Works with Compose BOM 2025.10.00):
-// IMPORTANT: Must include label text when using includeEditableText=true
+// For empty TextField: only label is present
 composeTestRule
     .onNodeWithTag("input_text_field")
-    .assertTextEquals("Enter text to translate", "", includeEditableText = true)
+    .assertTextEquals("Enter text to translate")
 
 // For verifying entered text:
 composeTestRule
@@ -75,7 +75,7 @@ composeTestRule
     .assertTextContains("Hello", substring = true)
 ```
 
-**Key Learning**: Material3's `OutlinedTextField` includes the `label` parameter in its Text semantics. When using `assertTextEquals(..., includeEditableText = true)`, you must provide both the label text and the editable text as separate parameters.
+**Key Learning**: Material3's `OutlinedTextField` with a label exposes only the label text when empty. Use `assertTextEquals("label")` for empty fields and `assertTextContains("content")` for filled fields.
 
 ---
 
@@ -218,11 +218,11 @@ All fakes use in-memory state (MutableStateFlow) instead of real dependencies:
 1. **Always inject dependencies** - Never construct directly
 2. **Reset state in @Before** - Clear all fakes and preferences
 3. **Use fake implementations** - Never depend on real DataStore, network, etc.
-4. **Handle Material3 semantics** - Use `assertTextEquals("label", "text", includeEditableText = true)` for TextField verification (Compose BOM 2025.10.00+)
-5. **Include label text** - When using `includeEditableText = true`, always provide the label as the first parameter
+4. **Handle Material3 semantics** - Use `assertTextEquals("label")` for empty TextField, `assertTextContains("text")` for filled (Compose BOM 2025.10.00+)
+5. **Keep assertions simple** - Avoid `includeEditableText = true` parameter complexity
 6. **Document behavior** - Comment on Material3-specific handling
 7. **Follow the pattern** - Copy from existing test files
-8. **Avoid text node searches for TextFields** - Use direct assertions on EditableText property instead
+8. **Avoid text node searches for TextFields** - Use direct assertions instead
 
 ### Test Setup Template:
 ```kotlin

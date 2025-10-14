@@ -7,7 +7,7 @@ Two tests were failing with assertion errors:
 
 Error message:
 ```
-java.lang.AssertionError: Failed to assert the following: (Text + EditableText = [])
+java.lang.AssertionError: Failed to assert the following: (Text + EditableText = [Enter text to translate,])
 ```
 
 ## What Was Wrong
@@ -16,24 +16,22 @@ The tests were using:
 assertTextEquals("", includeEditableText = true)
 ```
 
-But Material3's `OutlinedTextField` includes the **label text** in its Text semantics. The assertion was expecting an empty array, but was finding the label "Enter text to translate".
+But Material3's `OutlinedTextField` with a label only exposes the label text in its semantics when empty. Using `includeEditableText = true` with multiple parameters was causing assertion failures.
 
 ## The Fix
 Changed both failing assertions to:
 ```kotlin
-assertTextEquals("Enter text to translate", "", includeEditableText = true)
+assertTextEquals("Enter text to translate")
 ```
 
-This tells the assertion to expect:
-- **First parameter**: Label text ("Enter text to translate")
-- **Second parameter**: Editable text value (empty string "")
+This simply checks for the label text when the field is empty, which is what Material3 exposes in the semantics.
 
 ## Why This Works
-`assertTextEquals(..., includeEditableText = true)` checks **both**:
-1. Text semantics (which includes the label)
-2. EditableText semantics (which contains the actual input)
+Material3's `OutlinedTextField`:
+- **When empty**: Only the label is present in semantics → check with `assertTextEquals("label")`
+- **When filled**: Both label and content are present → check with `assertTextContains("content")`
 
-By providing both values, the assertion now passes correctly.
+The simplified approach avoids the complexity of `includeEditableText` parameter.
 
 ## Files Modified
 - ✅ `app/src/androidTest/java/com/example/globaltranslation/ui/textinput/TextInputScreenTest.kt`

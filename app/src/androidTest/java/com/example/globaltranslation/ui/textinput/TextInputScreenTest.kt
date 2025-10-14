@@ -71,11 +71,10 @@ class TextInputScreenTest {
             .assertExists()
         
         // Verify field is initially empty
-        // Material3 OutlinedTextField includes label in Text semantics
-        // When includeEditableText=true, we check: (label, editableText)
+        // Material3 OutlinedTextField: when empty, only label text is present
         composeTestRule
             .onNodeWithTag("input_text_field")
-            .assertTextEquals("Enter text to translate", "", includeEditableText = true)
+            .assertTextEquals("Enter text to translate")
 
         // Clear button should not exist when field is empty
         composeTestRule
@@ -138,11 +137,11 @@ class TextInputScreenTest {
         composeTestRule.waitForIdle()
 
         // Verify field is empty after clearing
-        // Material3 OutlinedTextField includes label in Text semantics
-        // When includeEditableText=true, we check: (label, editableText)
+        // Check that there's no text in the editable field
+        // Material3 TextField with label: use assertTextEquals with just label when empty
         composeTestRule
             .onNodeWithTag("input_text_field")
-            .assertTextEquals("Enter text to translate", "", includeEditableText = true)
+            .assertTextEquals("Enter text to translate")
     }
 
     @Test

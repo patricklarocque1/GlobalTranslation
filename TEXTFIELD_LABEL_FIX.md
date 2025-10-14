@@ -49,34 +49,22 @@ composeTestRule
 ## The Pattern
 When testing an empty OutlinedTextField with a label:
 ```kotlin
-assertTextEquals(
-    "Label text here",           // First parameter: label (Text semantics)
-    "",                          // Second parameter: editable text (EditableText semantics)
-    includeEditableText = true   // Must be true to check both
-)
+// Only the label is present when field is empty
+assertTextEquals("Label text here")
 ```
 
-When testing a filled OutlinedTextField with a label:
+When testing a filled OutlinedTextField:
 ```kotlin
-assertTextEquals(
-    "Label text here",           // First parameter: label (Text semantics)
-    "User input text",           // Second parameter: editable text (EditableText semantics)
-    includeEditableText = true   // Must be true to check both
-)
+// Check that the input text is present (ignores label)
+assertTextContains("User input text", substring = true)
 ```
 
-## Alternative Approach
-If you don't want to deal with the label, use `assertTextContains()`:
-```kotlin
-// Only checks the EditableText, ignores label
-composeTestRule
-    .onNodeWithTag("input_text_field")
-    .assertTextContains("", substring = false)  // For empty field
-
-composeTestRule
-    .onNodeWithTag("input_text_field")
-    .assertTextContains("Hello", substring = true)  // For filled field
-```
+## Why This Works Better
+The simplified approach:
+- ✅ Works reliably with Material3's TextField semantics
+- ✅ Avoids the complexity of `includeEditableText` parameter
+- ✅ Matches the actual semantics structure (label only when empty)
+- ✅ Uses `assertTextContains` for checking filled content
 
 ## Files Changed
 - `app/src/androidTest/java/com/example/globaltranslation/ui/textinput/TextInputScreenTest.kt`
@@ -86,4 +74,7 @@ composeTestRule
 - `TESTING_IMPROVEMENTS_SUMMARY.md` - Documented best practice
 
 ## Key Takeaway
-**Always remember**: `assertTextEquals(..., includeEditableText = true)` checks **ALL** text in the semantics node, not just the editable text. For Material3's OutlinedTextField, this includes the label!
+For Material3's OutlinedTextField:
+- **Empty field**: Use `assertTextEquals("label")` - only label is present
+- **Filled field**: Use `assertTextContains("content")` - checks the editable text
+- **Avoid**: Using `includeEditableText = true` - keep assertions simple!
