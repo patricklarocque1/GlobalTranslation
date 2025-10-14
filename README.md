@@ -264,6 +264,13 @@ The app uses a clean provider pattern with interfaces in :core and implementatio
   - Public `StateFlow` with `.asStateFlow()` for external consumption
   - Single source of truth maintained across all features
   
+- **Testing Infrastructure**: Production-ready test framework with fake implementations
+  - Hilt-based dependency injection for tests
+  - Fake providers prevent flaky tests (no real DataStore/network dependencies)
+  - All tests reset state in `@Before` setup for isolation
+  - Material3 semantics handled correctly (useUnmergedTree patterns)
+  - See TESTING_IMPROVEMENTS_SUMMARY.md for details
+  
 - **Reusable Components**: LanguagePicker dialog and button variants
 - **Runtime Permissions**: Comprehensive RECORD_AUDIO permission handling
 - **Modern APIs**: Material3 throughout with no deprecated API usage

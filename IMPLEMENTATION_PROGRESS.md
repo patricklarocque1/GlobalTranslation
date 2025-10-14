@@ -301,6 +301,15 @@ Transformed the app from single-module to 3-module clean architecture:
 - ✅ Documentation updated
 - ✅ Full build pipeline verified
 
+#### Step 5: Test Infrastructure Improvements ✅ (December 2024)
+- ✅ Made AppPreferences and NetworkMonitor open for testing
+- ✅ Created TestPreferencesModule with fake in-memory implementations
+- ✅ Fixed Material3 OutlinedTextField semantics (useUnmergedTree)
+- ✅ Added state reset to all 4 instrumentation tests
+- ✅ Eliminated flaky tests from persistent state leakage
+- ✅ Tests no longer depend on real DataStore or network connectivity
+- ✅ All tests follow deterministic, isolated testing patterns
+
 ### Architecture Benefits:
 - 🎯 **Testability**: Pure Kotlin :core for fast unit tests
 - 🎯 **Separation**: Clear module boundaries enforce clean architecture
