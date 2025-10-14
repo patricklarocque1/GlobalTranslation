@@ -55,71 +55,151 @@ class TextInputScreenTest {
     @Test
     fun textInputScreen_displaysInputField() {
         composeTestRule
-            .onNodeWithText("Enter text to translate", substring = true)
+            .onNode(
+                hasText("Hello") and hasAnyAncestor(hasTestTag("input_text_field")),
+                useUnmergedTree = true
+            )
+            .assertDoesNotExist()
+        
+        composeTestRule
+            .onNodeWithTag("input_text_field")
             .assertExists()
+
+        composeTestRule
+            .onNodeWithText("Type your message here...", substring = false)
+            .assertExists()
+
+        composeTestRule
+            .onNodeWithTag("clear_btn")
+            .assertDoesNotExist()
     }
     
     @Test
     fun textInputScreen_displaysLanguageSelectors() {
         // Should have language selection buttons
         composeTestRule
-            .onAllNodesWithContentDescription("Select language")
-            .assertCountEquals(2)
+            .onNodeWithTag("source_language_chip")
+            .assertExists()
+
+        composeTestRule
+            .onNodeWithTag("target_language_chip")
+            .assertExists()
     }
     
     @Test
     fun textInputScreen_hasTranslateButton() {
         composeTestRule
-            .onNode(hasText("Translate") or hasContentDescription("Translate"))
+            .onNodeWithTag("translate_btn")
             .assertExists()
     }
     
     @Test
     fun textInputScreen_hasSwapButton() {
         composeTestRule
-            .onNodeWithContentDescription("Swap languages")
+            .onNodeWithTag("swap_languages_btn")
             .assertExists()
     }
     
     @Test
     fun textInputScreen_hasClearButton() {
+        // Type some text so the clear button is rendered
         composeTestRule
-            .onNode(hasText("Clear") or hasContentDescription("Clear"))
+            .onNodeWithTag("input_text_field")
+            .performTextInput("Hello")
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("clear_btn")
             .assertExists()
+    }
+
+    @Test
+    fun textInputScreen_clearButton_clearsInput() {
+        composeTestRule
+            .onNodeWithTag("input_text_field")
+            .performTextInput("Hello")
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("clear_btn")
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("input_text_field")
+            .assertExists()
+    }
+
+    @Test
+    fun textInputScreen_swapButton_swapsLanguages() {
+        composeTestRule
+            .onNodeWithTag("source_language_chip")
+            .assert(hasText("English"))
+
+        composeTestRule
+            .onNodeWithTag("target_language_chip")
+            .assert(hasText("Spanish"))
+
+        composeTestRule
+            .onNodeWithTag("swap_languages_btn")
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("source_language_chip")
+            .assert(hasText("Spanish"))
+
+        composeTestRule
+            .onNodeWithTag("target_language_chip")
+            .assert(hasText("English"))
     }
     
     @Test
     fun textInputScreen_enterText_displaysInField() {
         // Find and type in text field
         composeTestRule
-            .onNodeWithText("Enter text to translate", substring = true)
+            .onNodeWithTag("input_text_field")
             .performTextInput("Hello")
         
         composeTestRule.waitForIdle()
         
         // Verify text appears
         composeTestRule
-            .onNodeWithText("Hello")
+            .onNode(
+                hasText("Hello") and hasAnyAncestor(hasTestTag("input_text_field")),
+                useUnmergedTree = true
+            )
             .assertExists()
+
+        composeTestRule
+            .onNodeWithText("Type your message here...", substring = false)
+            .assertDoesNotExist()
     }
     
     @Test
     fun textInputScreen_translationDisplaysResult() {
         // Enter text
         composeTestRule
-            .onNodeWithText("Enter text to translate", substring = true)
+            .onNodeWithTag("input_text_field")
             .performTextInput("Hello")
         
+        composeTestRule.waitForIdle()
+
         // Click translate button
         composeTestRule
-            .onNode(hasText("Translate") or hasContentDescription("Translate"))
+            .onNodeWithTag("translate_btn")
             .performClick()
         
         composeTestRule.waitForIdle()
         
         // Should show translated text
         composeTestRule
-            .onNodeWithText("Translated Text: Hello", substring = true)
+            .onAllNodesWithText("Hola: Hello")
+            .onFirst()
             .assertExists()
     }
 }

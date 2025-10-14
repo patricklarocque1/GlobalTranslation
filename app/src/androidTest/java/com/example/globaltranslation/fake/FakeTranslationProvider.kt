@@ -1,12 +1,15 @@
 package com.example.globaltranslation.fake
 
 import com.example.globaltranslation.core.provider.TranslationProvider
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Fake implementation of TranslationProvider for testing.
  * Provides controllable behavior for UI tests.
  */
-class FakeTranslationProvider : TranslationProvider {
+@Singleton
+class FakeTranslationProvider @Inject constructor() : TranslationProvider {
     
     var shouldSucceed = true
     var translationResult = "Translated Text"
@@ -26,7 +29,7 @@ class FakeTranslationProvider : TranslationProvider {
         return modelsDownloaded
     }
     
-    override suspend fun downloadModels(from: String, to: String): Result<Unit> {
+    override suspend fun downloadModels(from: String, to: String, requireWifi: Boolean): Result<Unit> {
         return if (downloadShouldSucceed) {
             modelsDownloaded = true
             Result.success(Unit)

@@ -27,9 +27,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.isGranted
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
+import androidx.core.content.PermissionChecker
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
@@ -37,18 +41,30 @@ import java.util.concurrent.Executors
  * Camera screen for real-time text recognition and translation.
  * Uses CameraX for camera preview and ML Kit for text recognition.
  */
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(
     modifier: Modifier = Modifier,
     viewModel: CameraViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val context = LocalContext.current
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PermissionChecker.PERMISSION_GRANTED
+        )
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+    }
     
     Box(modifier = modifier.fillMaxSize()) {
         when {
-            cameraPermissionState.status.isGranted -> {
+            hasCameraPermission -> {
                 // State to hold image capture controller
                 var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
                 
@@ -121,7 +137,7 @@ fun CameraScreen(
             else -> {
                 // Permission request UI
                 CameraPermissionRequest(
-                    onRequestPermission = { cameraPermissionState.launchPermissionRequest() },
+                    onRequestPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -142,7 +158,7 @@ private fun CameraPreview(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember { PreviewView(context) }
-    var camera by remember { mutableStateOf<androidx.camera.core.Camera?>(null) }
+    var camera by remember { mutableStateOf<Camera?>(null) }
     
     // Update flash when isFlashOn changes
     LaunchedEffect(isFlashOn) {
@@ -240,13 +256,17 @@ private fun CameraOverlay(
                 )
             }
             
-            // Language selector - Shows source → target
+            // Language selector - Shows source -> target
+            val languageLabel = "${getLanguageName(uiState.sourceLanguageCode)} -> ${getLanguageName(uiState.targetLanguageCode)}"
             FilterChip(
                 selected = false,
                 onClick = onLanguagePickerClick,
                 label = { 
-                    Text("${getLanguageName(uiState.sourceLanguageCode)} → ${getLanguageName(uiState.targetLanguageCode)}")
-                }
+                    Text(languageLabel)
+                },
+                modifier = Modifier
+                    .testTag("camera_language_chip")
+                    .semantics { contentDescription = "Select languages ($languageLabel)" }
             )
         }
         

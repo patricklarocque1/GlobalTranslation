@@ -1,8 +1,10 @@
 package com.example.globaltranslation.ui.conversation
 
+import android.Manifest
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import com.example.globaltranslation.MainActivity
 import com.example.globaltranslation.fake.FakeConversationRepository
 import com.example.globaltranslation.fake.FakeSpeechProvider
@@ -28,6 +30,11 @@ class ConversationScreenTest {
     
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+    
+    @get:Rule(order = 2)
+    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        Manifest.permission.RECORD_AUDIO
+    )
     
     @Inject
     lateinit var fakeTranslationProvider: FakeTranslationProvider
@@ -60,10 +67,9 @@ class ConversationScreenTest {
         composeTestRule.onNodeWithText("Conversation").performClick()
         composeTestRule.waitForIdle()
         
-        // Should display language selection buttons
-        composeTestRule
-            .onAllNodesWithContentDescription("Select language")
-            .assertCountEquals(2) // Source and target language selectors
+        // Should display language selection chips
+        composeTestRule.onNodeWithText("English").assertExists()
+        composeTestRule.onNodeWithText("Spanish").assertExists()
     }
     
     @Test
@@ -73,7 +79,10 @@ class ConversationScreenTest {
         
         // Microphone button should be visible
         composeTestRule
-            .onNode(hasContentDescription("Start listening") or hasContentDescription("Stop listening"))
+            .onNode(
+                hasContentDescription("Start listening") or hasContentDescription("Stop listening"),
+                useUnmergedTree = true
+            )
             .assertExists()
     }
     
@@ -95,7 +104,7 @@ class ConversationScreenTest {
         
         // Clear conversation button should exist
         composeTestRule
-            .onNode(hasText("Clear") or hasContentDescription("Clear conversation"))
+            .onNode(hasContentDescription("Clear conversation"), useUnmergedTree = true)
             .assertExists()
     }
     
@@ -106,8 +115,8 @@ class ConversationScreenTest {
         
         // No conversation history initially
         composeTestRule
-            .onNodeWithText("Start a conversation by tapping the microphone", substring = true)
+            .onNodeWithText("Tap to start speaking", substring = true)
             .assertExists()
-    }
+}
 }
 

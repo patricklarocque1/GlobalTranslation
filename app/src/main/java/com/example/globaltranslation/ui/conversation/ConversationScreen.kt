@@ -22,6 +22,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -33,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.R
 import com.example.globaltranslation.model.ConversationTurn
@@ -278,7 +281,9 @@ private fun LanguageSelectionRow(
                 onLanguageSelected = { language ->
                     onSourceLanguageChange(language)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("conversation_source_language")
             )
             
             // Swap button
@@ -295,7 +300,9 @@ private fun LanguageSelectionRow(
                 onLanguageSelected = { language ->
                     onTargetLanguageChange(language)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("conversation_target_language")
             )
             
             // Auto-play toggle
@@ -493,18 +500,32 @@ private fun SpeechInputArea(
             // Clear history button
             OutlinedIconButton(
                 onClick = onClearHistory,
-                enabled = !isListening && !isTranslating
+                enabled = !isListening && !isTranslating,
+                modifier = Modifier
+                    .testTag("clear_conversation_btn")
+                    .semantics { contentDescription = "Clear conversation" }
             ) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Clear conversation"
+                    contentDescription = null
                 )
             }
             
             // Main microphone button
+            val micContentDescription = when {
+                !isValidLanguagePair -> "Invalid language pair"
+                !hasPermission -> "Microphone permission required"
+                isDetectingSpeech -> "Detecting speech"
+                isListening -> "Stop listening"
+                else -> "Start listening"
+            }
+
             FloatingActionButton(
                 onClick = if (isListening) onStopListening else onStartListening,
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier
+                    .size(72.dp)
+                    .testTag("mic_btn")
+                    .semantics { contentDescription = micContentDescription },
                 containerColor = when {
                     !isValidLanguagePair -> MaterialTheme.colorScheme.errorContainer
                     !hasPermission -> MaterialTheme.colorScheme.error
@@ -517,7 +538,7 @@ private fun SpeechInputArea(
                     !isValidLanguagePair -> {
                         Icon(
                             Icons.Default.Warning,
-                            contentDescription = "Invalid language pair",
+                            contentDescription = null,
                             modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -531,7 +552,7 @@ private fun SpeechInputArea(
                     isListening -> {
                         Icon(
                             Icons.Default.Stop,
-                            contentDescription = "Stop listening",
+                            contentDescription = null,
                             modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
@@ -539,7 +560,7 @@ private fun SpeechInputArea(
                     !hasPermission -> {
                         Icon(
                             Icons.Default.MicOff,
-                            contentDescription = "Grant microphone permission",
+                            contentDescription = null,
                             modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onError
                         )
@@ -547,7 +568,7 @@ private fun SpeechInputArea(
                     else -> {
                         Icon(
                             Icons.Default.Mic,
-                            contentDescription = "Start listening",
+                            contentDescription = null,
                             modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )

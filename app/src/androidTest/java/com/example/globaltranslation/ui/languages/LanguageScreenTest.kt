@@ -33,7 +33,7 @@ class LanguageScreenTest {
     @Before
     fun setup() {
         hiltRule.inject()
-        fakeTranslationProvider.modelsDownloaded = true
+        fakeTranslationProvider.modelsDownloaded = false
         
         // Navigate to Languages tab
         composeTestRule.onNodeWithText("Languages").performClick()
@@ -75,14 +75,43 @@ class LanguageScreenTest {
     fun languageScreen_hasRefreshButton() {
         // Refresh button should exist
         composeTestRule
-            .onNode(hasContentDescription("Refresh") or hasText("Refresh"))
+            .onNodeWithTag("languages_refresh_btn")
             .assertExists()
     }
     
     @Test
     fun languageScreen_displaysTitle() {
         composeTestRule
-            .onNodeWithText("Manage Language Models", substring = true)
+            .onAllNodesWithText("Language Models")
+            .onFirst()
+            .assertExists()
+    }
+
+    @Test
+    fun languageScreen_cellularToggle_updatesStatusText() {
+        composeTestRule
+            .onNodeWithText("Models require WiFi connection", substring = true)
+            .assertExists()
+
+        composeTestRule
+            .onNodeWithTag("cellular_downloads_switch")
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithText("Models can download on mobile data", substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun languageScreen_spanishItem_hasDownloadButton() {
+        composeTestRule
+            .onNodeWithTag("languages_list")
+            .performScrollToNode(hasTestTag("language_item_es"))
+
+        composeTestRule
+            .onNodeWithTag("download_language_es")
             .assertExists()
     }
 }

@@ -15,19 +15,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.globaltranslation.model.ConversationTurn
 import com.example.globaltranslation.ui.components.LanguagePickerButton
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 /**
  * Screen for manual text input and translation.
@@ -116,10 +121,10 @@ fun TextInputScreen(
             TranslationResultCard(
                 translation = translation,
                 onSpeakOriginal = {
-                    viewModel.speakText(translation.originalText, translation.sourceLanguage)
+                    viewModel.speakText(translation.originalText, translation.sourceLang)
                 },
                 onSpeakTranslation = {
-                    viewModel.speakText(translation.translatedText, translation.targetLanguage)
+                    viewModel.speakText(translation.translatedText, translation.targetLang)
                 },
                 onCopyTranslation = {
                     copyToClipboard(context, translation.translatedText, "translation")
@@ -205,14 +210,21 @@ private fun LanguageSelectionCard(
                 onLanguageSelected = { language ->
                     onSourceLanguageChange(language)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("source_language_chip")
             )
             
             // Swap button
-            IconButton(onClick = onSwapLanguages) {
+            IconButton(
+                onClick = onSwapLanguages,
+                modifier = Modifier
+                    .testTag("swap_languages_btn")
+                    .semantics { contentDescription = "Swap languages" }
+            ) {
                 Icon(
                     Icons.Default.SwapHoriz,
-                    contentDescription = "Swap languages"
+                    contentDescription = null
                 )
             }
             
@@ -222,7 +234,9 @@ private fun LanguageSelectionCard(
                 onLanguageSelected = { language ->
                     onTargetLanguageChange(language)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("target_language_chip")
             )
         }
     }
@@ -247,7 +261,9 @@ private fun TextInputCard(
                 onValueChange = onInputTextChange,
                 label = { Text("Enter text to translate") },
                 placeholder = { Text("Type your message here...") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("input_text_field"),
                 minLines = 3,
                 maxLines = 6,
                 keyboardOptions = KeyboardOptions(
@@ -259,10 +275,15 @@ private fun TextInputCard(
                 ),
                 trailingIcon = {
                     if (inputText.isNotEmpty()) {
-                        IconButton(onClick = onClear) {
+                        IconButton(
+                            onClick = onClear,
+                            modifier = Modifier
+                                .testTag("clear_btn")
+                                .semantics { contentDescription = "Clear text" }
+                        ) {
                             Icon(
                                 Icons.Default.Clear,
-                                contentDescription = "Clear text"
+                                contentDescription = null
                             )
                         }
                     }
@@ -278,7 +299,9 @@ private fun TextInputCard(
                 Button(
                     onClick = onTranslate,
                     enabled = inputText.isNotEmpty() && !isTranslating && isValidLanguagePair,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("translate_btn")
                 ) {
                     if (isTranslating) {
                         CircularProgressIndicator(
@@ -304,7 +327,7 @@ private fun TextInputCard(
 
 @Composable
 private fun TranslationResultCard(
-    translation: TextTranslation,
+    translation: ConversationTurn,
     onSpeakOriginal: () -> Unit,
     onSpeakTranslation: () -> Unit,
     onCopyTranslation: () -> Unit,
@@ -326,14 +349,16 @@ private fun TranslationResultCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = getLanguageDisplayName(translation.sourceLanguage),
+                        text = getLanguageDisplayName(translation.sourceLang),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = translation.originalText,
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 3
                     )
                 }
                 IconButton(onClick = onSpeakOriginal) {
@@ -354,7 +379,7 @@ private fun TranslationResultCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = getLanguageDisplayName(translation.targetLanguage),
+                        text = getLanguageDisplayName(translation.targetLang),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -362,21 +387,33 @@ private fun TranslationResultCard(
                         text = translation.translatedText,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 4
                     )
                 }
                 Row {
-                    IconButton(onClick = onCopyTranslation) {
+                    IconButton(
+                        onClick = onCopyTranslation,
+                        modifier = Modifier
+                            .testTag("copy_translation_btn")
+                            .semantics { contentDescription = "Copy translation" }
+                    ) {
                         Icon(
                             Icons.Default.ContentCopy,
-                            contentDescription = "Copy translation",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    IconButton(onClick = onSpeakTranslation) {
+                    IconButton(
+                        onClick = onSpeakTranslation,
+                        modifier = Modifier
+                            .testTag("speak_translation_btn")
+                            .semantics { contentDescription = "Speak translation" }
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = "Speak translation",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -388,7 +425,7 @@ private fun TranslationResultCard(
 
 @Composable
 private fun TranslationHistoryItem(
-    translation: TextTranslation,
+    translation: ConversationTurn,
     onCopyToInput: () -> Unit,
     onCopyTranslation: () -> Unit,
     modifier: Modifier = Modifier
@@ -408,28 +445,32 @@ private fun TranslationHistoryItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${getLanguageDisplayName(translation.sourceLanguage)} → ${getLanguageDisplayName(translation.targetLanguage)}",
+                    text = "${getLanguageDisplayName(translation.sourceLang)} → ${getLanguageDisplayName(translation.targetLang)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row {
                     IconButton(
                         onClick = onCopyTranslation,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier
+                            .size(32.dp)
+                            .semantics { contentDescription = "Copy translation to clipboard" }
                     ) {
                         Icon(
                             Icons.Default.ContentCopy,
-                            contentDescription = "Copy translation to clipboard",
+                            contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
                     }
                     IconButton(
                         onClick = onCopyToInput,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier
+                            .size(32.dp)
+                            .semantics { contentDescription = "Copy to input" }
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Input,
-                            contentDescription = "Copy to input",
+                            contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
                     }

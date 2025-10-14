@@ -5,12 +5,15 @@ import com.example.globaltranslation.core.provider.TtsEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Fake implementation of TextToSpeechProvider for testing.
  * Simulates TTS without audio output.
  */
-class FakeTtsProvider : TextToSpeechProvider {
+@Singleton
+class FakeTtsProvider @Inject constructor() : TextToSpeechProvider {
     
     var shouldSucceed = true
     var speakingDuration = 100L // milliseconds

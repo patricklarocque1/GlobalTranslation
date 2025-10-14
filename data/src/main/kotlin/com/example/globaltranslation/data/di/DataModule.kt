@@ -38,7 +38,7 @@ object DataModule {
             }
         })
         // Use destructive migration only on downgrade (safer for production)
-        .fallbackToDestructiveMigrationOnDowngrade()
+        .fallbackToDestructiveMigrationOnDowngrade(true)
         // Add migrations here as schema evolves
         // .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()
@@ -52,4 +52,3 @@ object DataModule {
         return database.conversationDao()
     }
 }
-

@@ -5,12 +5,15 @@ import com.example.globaltranslation.core.provider.SpeechResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Fake implementation of SpeechProvider for testing.
  * Simulates speech recognition without requiring microphone permissions.
  */
-class FakeSpeechProvider : SpeechProvider {
+@Singleton
+class FakeSpeechProvider @Inject constructor() : SpeechProvider {
     
     var shouldSucceed = true
     var recognizedText = "Test speech"

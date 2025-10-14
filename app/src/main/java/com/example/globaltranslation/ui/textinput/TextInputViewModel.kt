@@ -39,17 +39,8 @@ class TextInputViewModel @Inject constructor(
     private fun loadTranslationHistory() {
         viewModelScope.launch {
             conversationRepository.getConversations().collect { savedConversations ->
-                // Convert ConversationTurn to TextTranslation
-                val textTranslations = savedConversations.map { turn ->
-                    TextTranslation(
-                        originalText = turn.originalText,
-                        translatedText = turn.translatedText,
-                        sourceLanguage = turn.sourceLang,
-                        targetLanguage = turn.targetLang,
-                        timestamp = turn.timestamp
-                    )
-                }
-                _uiState.value = _uiState.value.copy(translationHistory = textTranslations)
+                // Use ConversationTurn directly
+                _uiState.value = _uiState.value.copy(translationHistory = savedConversations)
             }
         }
     }
@@ -96,11 +87,11 @@ class TextInputViewModel @Inject constructor(
 
                 result.fold(
                     onSuccess = { translatedText ->
-                        val translation = TextTranslation(
+                        val translation = ConversationTurn(
                             originalText = textToTranslate,
                             translatedText = translatedText,
-                            sourceLanguage = currentState.sourceLanguage,
-                            targetLanguage = currentState.targetLanguage,
+                            sourceLang = currentState.sourceLanguage,
+                            targetLang = currentState.targetLanguage,
                             timestamp = System.currentTimeMillis()
                         )
                         
@@ -115,14 +106,7 @@ class TextInputViewModel @Inject constructor(
                         // Persist the translation to repository
                         viewModelScope.launch {
                             try {
-                                val turn = ConversationTurn(
-                                    originalText = translation.originalText,
-                                    translatedText = translation.translatedText,
-                                    sourceLang = translation.sourceLanguage,
-                                    targetLang = translation.targetLanguage,
-                                    timestamp = translation.timestamp
-                                )
-                                conversationRepository.saveConversation(turn)
+                                conversationRepository.saveConversation(translation)
                             } catch (e: Exception) {
                                 // Persistence failure doesn't break the UI
                             }
@@ -197,12 +181,19 @@ class TextInputViewModel @Inject constructor(
     /**
      * Copies text from a previous translation to input.
      */
-    fun copyToInput(translation: TextTranslation) {
+    fun copyToInput(translation: ConversationTurn) {
         _uiState.value = _uiState.value.copy(
             inputText = translation.originalText,
-            sourceLanguage = translation.sourceLanguage,
-            targetLanguage = translation.targetLanguage
+            sourceLanguage = translation.sourceLang,
+            targetLanguage = translation.targetLang
         )
+    }
+    
+    /**
+     * Copies text to input (overloaded version for text-only).
+     */
+    fun copyToInput(text: String) {
+        _uiState.value = _uiState.value.copy(inputText = text)
     }
     
     /**
@@ -237,8 +228,8 @@ data class TextInputUiState(
     val inputText: String = "",
     val sourceLanguage: String = TranslateLanguage.ENGLISH,
     val targetLanguage: String = TranslateLanguage.SPANISH,
-    val currentTranslation: TextTranslation? = null,
-    val translationHistory: List<TextTranslation> = emptyList(),
+    val currentTranslation: ConversationTurn? = null,
+    val translationHistory: List<ConversationTurn> = emptyList(),
     val isTranslating: Boolean = false,
     val error: String? = null
 ) {
@@ -248,14 +239,3 @@ data class TextInputUiState(
     val isValidLanguagePair: Boolean
         get() = sourceLanguage == TranslateLanguage.ENGLISH || targetLanguage == TranslateLanguage.ENGLISH
 }
-
-/**
- * Data class representing a text translation.
- */
-data class TextTranslation(
-    val originalText: String,
-    val translatedText: String,
-    val sourceLanguage: String,
-    val targetLanguage: String,
-    val timestamp: Long
-)

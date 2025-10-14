@@ -3,12 +3,15 @@ package com.example.globaltranslation.fake
 import com.example.globaltranslation.core.provider.BoundingBox
 import com.example.globaltranslation.core.provider.CameraTranslationProvider
 import com.example.globaltranslation.core.provider.TranslatedTextBlock
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Fake implementation of CameraTranslationProvider for testing.
  * Simulates camera OCR and translation without camera hardware.
  */
-class FakeCameraTranslationProvider : CameraTranslationProvider {
+@Singleton
+class FakeCameraTranslationProvider @Inject constructor() : CameraTranslationProvider {
     
     var shouldSucceed = true
     var detectedBlocks = listOf(

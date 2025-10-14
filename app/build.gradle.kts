@@ -17,7 +17,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.example.globaltranslation.HiltTestRunner"
         
         ndk {
             // Ensure all ABIs are properly configured for 16KB page size
@@ -83,18 +83,19 @@ dependencies {
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.material)
     
-    // CameraX dependencies (still used directly in CameraScreen for preview)
+    // CameraX dependencies with Compose support
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.compose)
     
     // ML Kit (for TranslateLanguage constants used in UI and InputImage for camera)
     implementation(libs.mlkit.translate)
     implementation(libs.mlkit.text.recognition)
     
-    // Permissions helper
-    implementation(libs.accompanist.permissions)
+    // Material Icons (required since Compose BOM 2025.10.00)
+    implementation(libs.androidx.compose.material.icons.core)
     
     // Hilt dependencies
     implementation(libs.hilt.android)
@@ -105,6 +106,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

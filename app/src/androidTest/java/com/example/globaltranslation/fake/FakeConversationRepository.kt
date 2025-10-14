@@ -5,12 +5,15 @@ import com.example.globaltranslation.core.repository.ConversationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Fake implementation of ConversationRepository for testing.
  * Stores conversations in memory instead of Room database.
  */
-class FakeConversationRepository : ConversationRepository {
+@Singleton
+class FakeConversationRepository @Inject constructor() : ConversationRepository {
     
     private val conversations = mutableListOf<ConversationTurn>()
     private val _conversationsFlow = MutableStateFlow<List<ConversationTurn>>(emptyList())

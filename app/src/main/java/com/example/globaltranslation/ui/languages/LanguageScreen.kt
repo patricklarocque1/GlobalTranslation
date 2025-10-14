@@ -4,18 +4,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 /**
  * Screen for managing translation language models.
@@ -45,6 +52,18 @@ fun LanguageScreen(
         LanguageScreenHeader(
             isLoading = uiState.isLoading,
             onRefresh = viewModel::refreshLanguages
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Popular language pairs carousel
+        PopularLanguagePairsCarousel(
+            onLanguagePairSelected = { (fromLang, toLang) ->
+                // Start downloading both models for the selected pair
+                viewModel.downloadLanguage(fromLang)
+                viewModel.downloadLanguage(toLang)
+            },
+            modifier = Modifier.fillMaxWidth()
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -146,7 +165,10 @@ fun LanguageScreen(
                 }
                 Switch(
                     checked = uiState.allowCellularDownloads,
-                    onCheckedChange = { viewModel.toggleCellularDownloads() }
+                    onCheckedChange = { viewModel.toggleCellularDownloads() },
+                    modifier = Modifier
+                        .testTag("cellular_downloads_switch")
+                        .semantics { contentDescription = "Toggle cellular downloads" }
                 )
             }
         }
@@ -163,6 +185,7 @@ fun LanguageScreen(
             }
         } else {
             LazyColumn(
+                modifier = Modifier.testTag("languages_list"),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
@@ -223,7 +246,10 @@ private fun LanguageScreenHeader(
         
         IconButton(
             onClick = onRefresh,
-            enabled = !isLoading
+            enabled = !isLoading,
+            modifier = Modifier
+                .testTag("languages_refresh_btn")
+                .semantics { contentDescription = "Refresh languages" }
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
@@ -233,7 +259,7 @@ private fun LanguageScreenHeader(
             } else {
                 Icon(
                     Icons.Default.Refresh,
-                    contentDescription = "Refresh"
+                    contentDescription = null
                 )
             }
         }
@@ -249,7 +275,9 @@ private fun LanguageModelItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("language_item_${language.code}")
     ) {
         Column(
             modifier = Modifier
@@ -318,10 +346,17 @@ private fun LanguageModelItem(
                                 strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            TextButton(onClick = onCancel) {
+                            TextButton(
+                                onClick = onCancel,
+                                modifier = Modifier
+                                    .testTag("cancel_download_${language.code}")
+                                    .semantics {
+                                        contentDescription = "Cancel ${language.name} download"
+                                    }
+                            ) {
                                 Icon(
                                     Icons.Default.Cancel,
-                                    contentDescription = "Cancel",
+                                    contentDescription = null,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -340,7 +375,12 @@ private fun LanguageModelItem(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             TextButton(
-                                onClick = onDelete
+                                onClick = onDelete,
+                                modifier = Modifier
+                                    .testTag("remove_language_${language.code}")
+                                    .semantics {
+                                        contentDescription = "Remove ${language.name}"
+                                    }
                             ) {
                                 Icon(
                                     Icons.Default.Delete,
@@ -355,6 +395,11 @@ private fun LanguageModelItem(
                     else -> {
                         Button(
                             onClick = onDownload,
+                            modifier = Modifier
+                                .testTag("download_language_${language.code}")
+                                .semantics {
+                                    contentDescription = "Download ${language.name}"
+                                },
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Icon(
@@ -433,6 +478,85 @@ private fun LanguageModelItem(
                 }
             }
         }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PopularLanguagePairsCarousel(
+    onLanguagePairSelected: (Pair<String, String>) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val popularPairs = listOf(
+        "en" to "es",  // English to Spanish
+        "en" to "fr",  // English to French
+        "en" to "de",  // English to German
+        "en" to "zh",  // English to Chinese
+        "en" to "ja",  // English to Japanese
+        "es" to "fr",  // Spanish to French
+        "fr" to "de"   // French to German
+    )
+    
+    val carouselState = rememberCarouselState(itemCount = { popularPairs.size })
+    
+    HorizontalCenteredHeroCarousel(
+        state = carouselState,
+        modifier = modifier
+    ) { index ->
+        val pair = popularPairs[index]
+        
+        Card(
+            onClick = { onLanguagePairSelected(pair) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = pair.first.uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = pair.second.uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Popular translation pair",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
