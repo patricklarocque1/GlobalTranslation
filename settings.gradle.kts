@@ -1,14 +1,12 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
+        // Add Maven repository for preview/alpha versions if needed
+        maven {
+            url = uri("https://androidx.dev/snapshots/builds/12443078/artifacts/repository")
+        }
     }
 }
 dependencyResolutionManagement {
