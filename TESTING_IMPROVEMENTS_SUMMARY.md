@@ -45,9 +45,9 @@ This document summarizes the comprehensive testing infrastructure improvements m
 - Previous solution using `useUnmergedTree = true` no longer works with latest Material3
 
 **Solution (Updated)**:
-- Use `assertTextEquals()` to verify empty text fields
+- Use `assertTextEquals()` with the exact `Text + EditableText` sequence for empty fields
 - Use `assertTextContains()` to verify entered text
-- These methods access the EditableText semantics property directly
+- These methods access the EditableText semantics directly
 - No longer rely on text node searches
 
 **Files Changed**:
@@ -64,10 +64,15 @@ composeTestRule
     .assertExists()
 
 // NEW APPROACH (Works with Compose BOM 2025.10.00):
-// For empty TextField: only label is present
+// Empty & unfocused: label + empty EditableText
 composeTestRule
     .onNodeWithTag("input_text_field")
-    .assertTextEquals("Enter text to translate")
+    .assertTextEquals("Enter text to translate", "")
+
+// Empty & focused (placeholder visible): label + placeholder + empty EditableText
+composeTestRule
+    .onNodeWithTag("input_text_field")
+    .assertTextEquals("Enter text to translate", "Type your message here...", "")
 
 // For verifying entered text:
 composeTestRule
@@ -75,7 +80,7 @@ composeTestRule
     .assertTextContains("Hello", substring = true)
 ```
 
-**Key Learning**: Material3's `OutlinedTextField` with a label exposes only the label text when empty. Use `assertTextEquals("label")` for empty fields and `assertTextContains("content")` for filled fields.
+**Key Learning**: `assertTextEquals` validates the sequence of visible `Text` pieces (label, placeholder) followed by `EditableText`. Provide all parts in order for equality; use `assertTextContains` for filled content.
 
 ---
 
@@ -218,8 +223,8 @@ All fakes use in-memory state (MutableStateFlow) instead of real dependencies:
 1. **Always inject dependencies** - Never construct directly
 2. **Reset state in @Before** - Clear all fakes and preferences
 3. **Use fake implementations** - Never depend on real DataStore, network, etc.
-4. **Handle Material3 semantics** - Use `assertTextEquals("label")` for empty TextField, `assertTextContains("text")` for filled (Compose BOM 2025.10.00+)
-5. **Keep assertions simple** - Avoid `includeEditableText = true` parameter complexity
+4. **Handle Material3 semantics** - Empty unfocused: `assertTextEquals("label", "")`; Empty focused: `assertTextEquals("label", "placeholder", "")`; Filled: `assertTextContains("text")` (Compose BOM 2025.10.00+)
+5. **Keep assertions simple** - Avoid toggling `includeEditableText`; supply the sequence instead
 6. **Document behavior** - Comment on Material3-specific handling
 7. **Follow the pattern** - Copy from existing test files
 8. **Avoid text node searches for TextFields** - Use direct assertions instead

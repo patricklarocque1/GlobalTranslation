@@ -7,9 +7,13 @@ java.lang.AssertionError: Failed to assert the following: (Text + EditableText =
 Semantics of the node:
 ```
 
-**Root Cause**: Material3's `OutlinedTextField` with a label exposes only the label text in its semantics when the field is empty. Using `includeEditableText = true` with multiple parameters was causing issues.
+**Root Cause**: With Compose BOM 2025.10.00, `assertTextEquals` compares the combined semantics sequence of `Text + EditableText`. For an OutlinedTextField with a label:
+- Unfocused + empty → `Text = [label]`, `EditableText = ""` → expected list: `[label, ""]`
+- Focused + empty (placeholder visible) → `Text = [label, placeholder]`, `EditableText = ""` → expected list: `[label, placeholder, ""]`
 
-**Solution**: Use `assertTextEquals("Enter text to translate")` without `includeEditableText` parameter. When the TextField is empty, only the label is present in the semantics.
+**Solution**: Supply the exact sequence to `assertTextEquals(...)` and avoid the `includeEditableText` flag entirely (defaults are correct):
+- Empty (unfocused): `.assertTextEquals("Enter text to translate", "")`
+- Empty (focused, placeholder visible): `.assertTextEquals("Enter text to translate", "Type your message here...", "")`
 
 ---
 
@@ -57,10 +61,15 @@ composeTestRule
     .onNodeWithTag("input_text_field")
     .assertTextContains("Hello", substring = true)
 
-// Check empty state - only label text is present when field is empty
+// Check empty state - unfocused: label + empty EditableText
 composeTestRule
     .onNodeWithTag("input_text_field")
-    .assertTextEquals("Enter text to translate")
+    .assertTextEquals("Enter text to translate", "")
+
+// Check empty state - focused: label + placeholder + empty EditableText
+composeTestRule
+    .onNodeWithTag("input_text_field")
+    .assertTextEquals("Enter text to translate", "Type your message here...", "")
 ```
 
 ## Tests Fixed
@@ -70,9 +79,10 @@ composeTestRule
 
 ## Key Learning
 For Material3's OutlinedTextField with a label:
-- **When empty**: Only the label text is present → use `assertTextEquals("label")`
-- **When filled**: Both label and content are present → use `assertTextContains("text", substring = true)` to check content
-- **Avoid**: Using `includeEditableText = true` parameter - it complicates assertions unnecessarily
+- Empty (unfocused): use `assertTextEquals("label", "")`
+- Empty (focused, placeholder visible): use `assertTextEquals("label", "placeholder", "")`
+- Filled: use `assertTextContains("text", substring = true)` to check content
+- Alternative: `hasTextExactly(..., includeEditableText = false)` if you want to ignore the editable text part entirely
 
 ## Why This Works
 The new approach uses `assertTextEquals()` and `assertTextContains()` which:
@@ -81,9 +91,7 @@ The new approach uses `assertTextEquals()` and `assertTextContains()` which:
 - Don't depend on complex parameter combinations
 - Are the recommended way to test text fields in Compose
 
-**Key Insight**: Material3's `OutlinedTextField` with a label exposes:
-- **When empty**: Only the label in the Text semantics → `assertTextEquals("label")`
-- **When filled**: Both label and content → `assertTextContains("content")` to check the editable text
+**Key Insight**: `assertTextEquals` validates the sequence of `Text` (label and possibly placeholder) followed by the `EditableText` content. Provide all visible pieces in order.
 
 ## Files Changed
 - `app/src/androidTest/java/com/example/globaltranslation/ui/textinput/TextInputScreenTest.kt`

@@ -30,27 +30,27 @@ The semantics tree looks like:
 - EditableText: "" (empty when no input)
 
 ## Solution
-Change the assertion from:
+Use `assertTextEquals(...)` to supply the exact sequence of `Text + EditableText` exposed by Material3. Do not set the `includeEditableText` flag (defaults are correct):
 ```kotlin
-// ❌ WRONG - Only checks EditableText, ignores label
+// ✅ Empty & unfocused: label + empty EditableText
 composeTestRule
     .onNodeWithTag("input_text_field")
-    .assertTextEquals("", includeEditableText = true)
-```
+    .assertTextEquals("Enter text to translate", "")
 
-To:
-```kotlin
-// ✅ CORRECT - Checks both label (Text) and input (EditableText)
+// ✅ Empty & focused (placeholder visible): label + placeholder + empty EditableText
 composeTestRule
     .onNodeWithTag("input_text_field")
-    .assertTextEquals("Enter text to translate", "", includeEditableText = true)
+    .assertTextEquals("Enter text to translate", "Type your message here...", "")
 ```
 
 ## The Pattern
 When testing an empty OutlinedTextField with a label:
 ```kotlin
-// Only the label is present when field is empty
-assertTextEquals("Label text here")
+// Unfocused: label + empty EditableText
+assertTextEquals("Label text here", "")
+
+// Focused (placeholder visible): label + placeholder + empty EditableText
+assertTextEquals("Label text here", "Placeholder here...", "")
 ```
 
 When testing a filled OutlinedTextField:
@@ -60,21 +60,22 @@ assertTextContains("User input text", substring = true)
 ```
 
 ## Why This Works Better
-The simplified approach:
-- ✅ Works reliably with Material3's TextField semantics
-- ✅ Avoids the complexity of `includeEditableText` parameter
-- ✅ Matches the actual semantics structure (label only when empty)
+The approach:
+- ✅ Matches Material3's actual `Text + EditableText` semantics ordering
+- ✅ Avoids the complexity of the `includeEditableText` parameter
+- ✅ Clearly accounts for placeholder visibility when focused
 - ✅ Uses `assertTextContains` for checking filled content
 
 ## Files Changed
 - `app/src/androidTest/java/com/example/globaltranslation/ui/textinput/TextInputScreenTest.kt`
-  - Fixed `textInputScreen_displaysInputField()` test
-  - Fixed `textInputScreen_clearButton_clearsInput()` test
-- `COMPOSE_BOM_2025_10_00_FIX.md` - Updated with new pattern
+  - `textInputScreen_displaysInputField()` → asserts `(label, "")`
+  - `textInputScreen_clearButton_clearsInput()` → asserts `(label, placeholder, "")` when focused
+- `COMPOSE_BOM_2025_10_00_FIX.md` - Updated with final pattern
 - `TESTING_IMPROVEMENTS_SUMMARY.md` - Documented best practice
 
 ## Key Takeaway
 For Material3's OutlinedTextField:
-- **Empty field**: Use `assertTextEquals("label")` - only label is present
-- **Filled field**: Use `assertTextContains("content")` - checks the editable text
-- **Avoid**: Using `includeEditableText = true` - keep assertions simple!
+- **Empty unfocused**: `assertTextEquals("label", "")`
+- **Empty focused** (placeholder visible): `assertTextEquals("label", "placeholder", "")`
+- **Filled field**: `assertTextContains("content")`
+- **Optional**: Use `hasTextExactly(..., includeEditableText = false)` to ignore the editable part

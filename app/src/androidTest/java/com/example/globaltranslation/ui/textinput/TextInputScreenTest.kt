@@ -74,7 +74,8 @@ class TextInputScreenTest {
         // Material3 OutlinedTextField: when empty, only label text is present
         composeTestRule
             .onNodeWithTag("input_text_field")
-            .assertTextEquals("Enter text to translate")
+            // Compose asserts against Text + EditableText; include empty EditableText
+            .assertTextEquals("Enter text to translate", "")
 
         // Clear button should not exist when field is empty
         composeTestRule
@@ -141,7 +142,8 @@ class TextInputScreenTest {
         // Material3 TextField with label: use assertTextEquals with just label when empty
         composeTestRule
             .onNodeWithTag("input_text_field")
-            .assertTextEquals("Enter text to translate")
+            // When focused after clearing, placeholder is present; include it and empty EditableText
+            .assertTextEquals("Enter text to translate", "Type your message here...", "")
     }
 
     @Test
