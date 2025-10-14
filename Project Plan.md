@@ -31,10 +31,11 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 
 ## ✅ 2. Implementation Status - ALL COMPLETED
 
-### Core Services Module ✅ COMPLETED
+### Core Services Module ✅ COMPLETED (Migrated to :data Providers)
 
-**Package:** `com.example.globaltranslation.services`  
-**Note:** Services are being migrated to :data module providers
+**Legacy Location:** `com.example.globaltranslation.services` (REMOVED Oct 10, 2025)  
+**Current Location:** `:data/provider/` (Provider implementations)  
+**Note:** All services successfully migrated to :data module providers. Legacy services removed.
 
 #### ✅ TranslationService.kt - IMPLEMENTED
 

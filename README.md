@@ -152,7 +152,7 @@ GlobalTranslation/
     UI layer with Compose screens and ViewModels
     - MainActivity with NavigationSuiteScaffold
     - 4 feature screens (Conversation, Text Input, Camera, Languages)
-    - Legacy services (being migrated to :data providers)
+    - All ViewModels use :data providers (migration complete)
     - Material3 Expressive Theme
 ```
 
