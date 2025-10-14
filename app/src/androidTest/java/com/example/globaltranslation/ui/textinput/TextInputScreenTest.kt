@@ -65,25 +65,17 @@ class TextInputScreenTest {
     
     @Test
     fun textInputScreen_displaysInputField() {
-        composeTestRule
-            .onNode(
-                hasText("Hello") and hasAnyAncestor(hasTestTag("input_text_field")),
-                useUnmergedTree = true
-            )
-            .assertDoesNotExist()
-        
+        // Verify text field exists
         composeTestRule
             .onNodeWithTag("input_text_field")
             .assertExists()
-
-        // Material3 OutlinedTextField placeholder is in the unmerged semantics tree
+        
+        // Verify field is initially empty (Compose BOM 2025.10.00 changed semantics)
         composeTestRule
-            .onNode(
-                hasText("Type your message here..."),
-                useUnmergedTree = true
-            )
-            .assertExists()
+            .onNodeWithTag("input_text_field")
+            .assertTextEquals("", includeEditableText = true)
 
+        // Clear button should not exist when field is empty
         composeTestRule
             .onNodeWithTag("clear_btn")
             .assertDoesNotExist()
@@ -143,9 +135,10 @@ class TextInputScreenTest {
 
         composeTestRule.waitForIdle()
 
+        // Verify field is empty after clearing
         composeTestRule
             .onNodeWithTag("input_text_field")
-            .assertExists()
+            .assertTextEquals("", includeEditableText = true)
     }
 
     @Test
@@ -182,21 +175,10 @@ class TextInputScreenTest {
         
         composeTestRule.waitForIdle()
         
-        // Verify text appears
+        // Verify text appears in the field (Compose BOM 2025.10.00 changed semantics)
         composeTestRule
-            .onNode(
-                hasText("Hello") and hasAnyAncestor(hasTestTag("input_text_field")),
-                useUnmergedTree = true
-            )
-            .assertExists()
-
-        // After typing, placeholder should not be visible (Material3 behavior)
-        composeTestRule
-            .onNode(
-                hasText("Type your message here..."),
-                useUnmergedTree = true
-            )
-            .assertDoesNotExist()
+            .onNodeWithTag("input_text_field")
+            .assertTextContains("Hello", substring = true)
     }
     
     @Test
