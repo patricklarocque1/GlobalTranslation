@@ -64,15 +64,18 @@ composeTestRule
     .assertExists()
 
 // NEW APPROACH (Works with Compose BOM 2025.10.00):
+// IMPORTANT: Must include label text when using includeEditableText=true
 composeTestRule
     .onNodeWithTag("input_text_field")
-    .assertTextEquals("", includeEditableText = true)
+    .assertTextEquals("Enter text to translate", "", includeEditableText = true)
 
 // For verifying entered text:
 composeTestRule
     .onNodeWithTag("input_text_field")
     .assertTextContains("Hello", substring = true)
 ```
+
+**Key Learning**: Material3's `OutlinedTextField` includes the `label` parameter in its Text semantics. When using `assertTextEquals(..., includeEditableText = true)`, you must provide both the label text and the editable text as separate parameters.
 
 ---
 
@@ -215,10 +218,11 @@ All fakes use in-memory state (MutableStateFlow) instead of real dependencies:
 1. **Always inject dependencies** - Never construct directly
 2. **Reset state in @Before** - Clear all fakes and preferences
 3. **Use fake implementations** - Never depend on real DataStore, network, etc.
-4. **Handle Material3 semantics** - Use `assertTextEquals()` and `assertTextContains()` for TextField verification (Compose BOM 2025.10.00+)
-5. **Document behavior** - Comment on Material3-specific handling
-6. **Follow the pattern** - Copy from existing test files
-7. **Avoid text node searches for TextFields** - Use direct assertions on EditableText property instead
+4. **Handle Material3 semantics** - Use `assertTextEquals("label", "text", includeEditableText = true)` for TextField verification (Compose BOM 2025.10.00+)
+5. **Include label text** - When using `includeEditableText = true`, always provide the label as the first parameter
+6. **Document behavior** - Comment on Material3-specific handling
+7. **Follow the pattern** - Copy from existing test files
+8. **Avoid text node searches for TextFields** - Use direct assertions on EditableText property instead
 
 ### Test Setup Template:
 ```kotlin
