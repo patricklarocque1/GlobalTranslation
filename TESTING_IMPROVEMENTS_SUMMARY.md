@@ -1,10 +1,8 @@
 # Testing Infrastructure Improvements - Complete!
 
-**Date**: December 2024 (Updated October 2025)  
+**Date**: December 2024  
 **Status**: ✅ ALL ISSUES RESOLVED  
 **Result**: Instrumentation tests are now deterministic, isolated, and reliable
-
-**Latest Update (Oct 2025)**: Fixed compatibility with Compose BOM 2025.10.00 Material3 semantics changes
 
 ---
 
@@ -37,41 +35,35 @@ This document summarizes the comprehensive testing infrastructure improvements m
 
 ---
 
-### 2. ✅ Material3 OutlinedTextField Semantics Changes (Updated Oct 2025)
+### 2. ✅ Material3 OutlinedTextField Semantics Changes
 
 **Problem**:
-- Compose BOM 2025.10.00 introduced breaking changes to Material3 OutlinedTextField semantics
-- Placeholder and entered text no longer accessible via `hasText()` matcher
-- Previous solution using `useUnmergedTree = true` no longer works with latest Material3
+- Recent Compose Material3 updates hide placeholder/typed text in merged semantics tree
+- `TextInputScreenTest` failed to find "Type your message here..." placeholder
+- Placeholder text only visible in unmerged semantics tree
 
-**Solution (Updated)**:
-- Use `assertTextEquals()` to verify empty text fields
-- Use `assertTextContains()` to verify entered text
-- These methods access the EditableText semantics property directly
-- No longer rely on text node searches
+**Solution**:
+- Updated assertions to use `useUnmergedTree = true` for placeholder searches
+- Added comments explaining Material3 behavior
+- Tests now correctly handle both merged and unmerged semantics
 
 **Files Changed**:
 - `app/src/androidTest/java/com/example/globaltranslation/ui/textinput/TextInputScreenTest.kt`
 
 **Example**:
 ```kotlin
-// OLD APPROACH (Broken in Compose BOM 2025.10.00):
+// Before: Failed to find placeholder
+composeTestRule
+    .onNodeWithText("Type your message here...")
+    .assertExists()
+
+// After: Correctly searches unmerged tree
 composeTestRule
     .onNode(
         hasText("Type your message here..."),
         useUnmergedTree = true
     )
     .assertExists()
-
-// NEW APPROACH (Works with Compose BOM 2025.10.00):
-composeTestRule
-    .onNodeWithTag("input_text_field")
-    .assertTextEquals("", includeEditableText = true)
-
-// For verifying entered text:
-composeTestRule
-    .onNodeWithTag("input_text_field")
-    .assertTextContains("Hello", substring = true)
 ```
 
 ---
@@ -215,10 +207,9 @@ All fakes use in-memory state (MutableStateFlow) instead of real dependencies:
 1. **Always inject dependencies** - Never construct directly
 2. **Reset state in @Before** - Clear all fakes and preferences
 3. **Use fake implementations** - Never depend on real DataStore, network, etc.
-4. **Handle Material3 semantics** - Use `assertTextEquals()` and `assertTextContains()` for TextField verification (Compose BOM 2025.10.00+)
+4. **Handle Material3 semantics** - Use useUnmergedTree when needed
 5. **Document behavior** - Comment on Material3-specific handling
 6. **Follow the pattern** - Copy from existing test files
-7. **Avoid text node searches for TextFields** - Use direct assertions on EditableText property instead
 
 ### Test Setup Template:
 ```kotlin
