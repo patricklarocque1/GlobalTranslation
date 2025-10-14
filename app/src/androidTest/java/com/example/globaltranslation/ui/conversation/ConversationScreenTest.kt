@@ -45,6 +45,12 @@ class ConversationScreenTest {
     @Inject
     lateinit var fakeRepository: FakeConversationRepository
     
+    @Inject
+    lateinit var appPreferences: com.example.globaltranslation.data.preferences.AppPreferences
+    
+    @Inject
+    lateinit var networkMonitor: com.example.globaltranslation.data.network.NetworkMonitor
+    
     @Before
     fun setup() {
         hiltRule.inject()
@@ -52,6 +58,12 @@ class ConversationScreenTest {
         // Reset fakes to default state
         fakeTranslationProvider.shouldSucceed = true
         fakeSpeechProvider.shouldSucceed = true
+        fakeRepository.clearConversations()
+        
+        // Reset preferences to prevent test pollution
+        kotlinx.coroutines.runBlocking {
+            appPreferences.clearAll()
+        }
     }
     
     @Test

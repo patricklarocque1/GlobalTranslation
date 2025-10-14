@@ -34,11 +34,22 @@ class TextInputScreenTest {
     @Inject
     lateinit var fakeTtsProvider: FakeTtsProvider
     
+    @Inject
+    lateinit var appPreferences: com.example.globaltranslation.data.preferences.AppPreferences
+    
+    @Inject
+    lateinit var networkMonitor: com.example.globaltranslation.data.network.NetworkMonitor
+    
     @Before
     fun setup() {
         hiltRule.inject()
         fakeTranslationProvider.shouldSucceed = true
         fakeTranslationProvider.translationResult = "Hola"
+        
+        // Reset preferences to prevent test pollution
+        kotlinx.coroutines.runBlocking {
+            appPreferences.clearAll()
+        }
         
         // Navigate to Text Input tab
         composeTestRule.onNodeWithText("Text Input").performClick()
@@ -65,8 +76,12 @@ class TextInputScreenTest {
             .onNodeWithTag("input_text_field")
             .assertExists()
 
+        // Material3 OutlinedTextField placeholder is in the unmerged semantics tree
         composeTestRule
-            .onNodeWithText("Type your message here...", substring = false)
+            .onNode(
+                hasText("Type your message here..."),
+                useUnmergedTree = true
+            )
             .assertExists()
 
         composeTestRule
@@ -175,8 +190,12 @@ class TextInputScreenTest {
             )
             .assertExists()
 
+        // After typing, placeholder should not be visible (Material3 behavior)
         composeTestRule
-            .onNodeWithText("Type your message here...", substring = false)
+            .onNode(
+                hasText("Type your message here..."),
+                useUnmergedTree = true
+            )
             .assertDoesNotExist()
     }
     

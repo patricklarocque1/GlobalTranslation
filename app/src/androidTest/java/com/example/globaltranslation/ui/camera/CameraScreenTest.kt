@@ -37,10 +37,21 @@ class CameraScreenTest {
     @Inject
     lateinit var fakeCameraProvider: FakeCameraTranslationProvider
     
+    @Inject
+    lateinit var appPreferences: com.example.globaltranslation.data.preferences.AppPreferences
+    
+    @Inject
+    lateinit var networkMonitor: com.example.globaltranslation.data.network.NetworkMonitor
+    
     @Before
     fun setup() {
         hiltRule.inject()
         fakeCameraProvider.shouldSucceed = true
+        
+        // Reset preferences to prevent test pollution
+        kotlinx.coroutines.runBlocking {
+            appPreferences.clearAll()
+        }
         
         // Navigate to Camera tab
         composeTestRule.onNodeWithText("Camera").performClick()
