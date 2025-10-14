@@ -76,8 +76,10 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Status:** Live voice translation fully functional
 - **Features:** Real-time speech-to-speech translation, conversation history
 - **UI Components:** Microphone input, language selection, auto-play controls
+- **Advanced Features:** Pull-to-refresh saved history, saved conversation deletion
 - **Permissions:** Runtime RECORD_AUDIO permission handling with visual feedback
 - **Data Model:** `ConversationTurn` with original/translated text pairs
+- **Room Integration:** Persistent conversation storage with pull-to-refresh access
 
 #### ✅ TextInputScreen.kt + ViewModel - IMPLEMENTED
 
@@ -96,10 +98,14 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 
 #### ✅ LanguageScreen.kt + ViewModel - IMPLEMENTED
 
-- **Status:** ML Kit model management interface complete
-- **Features:** Model download/delete, download progress tracking
-- **UI Components:** Supported languages list, download status indicators
-- **Integration:** Direct ML Kit model manager integration
+- **Status:** ML Kit model management interface complete with advanced UI
+- **Features:** Model download/delete, download progress tracking, cancel downloads
+- **UI Components:** 
+  - **Material 3 HorizontalCenteredHeroCarousel** for popular language pairs (NEW!)
+  - **Network status indicator** (WiFi/Cellular/Offline) (NEW!)
+  - **WiFi-only download toggle** in settings card (NEW!)
+  - Supported languages list with download status indicators
+- **Integration:** Direct ML Kit model manager integration with RemoteModelManager
 
 ### ✅ Reusable Components - IMPLEMENTED
 

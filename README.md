@@ -230,14 +230,17 @@ The app uses a clean provider pattern with interfaces in :core and implementatio
   - Uses `ConversationViewModel` with providers from :data
   - Real-time speech recognition feedback
   - Auto-play translation support
+  - **Pull-to-refresh** to view saved conversation history from Room database
+  - **Saved history management** with delete functionality
   - Conversation history persisted to Room database
   
 - **TextInputScreen**: Manual text translation with full features ✅
   - Uses `TextInputViewModel` with providers from :data
   - Translation history with timestamps
-  - Copy to clipboard and copy to input functionality
+  - **Copy to clipboard** and **copy to input** functionality
   - Text-to-speech for both original and translated text
   - Speak button integration matching conversation screen
+  - Clear history and clear input buttons
 
 - **CameraScreen**: Real-time camera translation with OCR ✅
   - Uses `CameraViewModel` with CameraTranslationProvider from :data
@@ -250,9 +253,13 @@ The app uses a clean provider pattern with interfaces in :core and implementatio
   
 - **LanguageScreen**: ML Kit model management ✅
   - Uses `LanguageViewModel` with TranslationProvider from :data
+  - **Material 3 HorizontalCenteredHeroCarousel** showcasing popular language pairs
+  - **Real-time network status indicator** (WiFi/Cellular/Offline)
+  - **WiFi-only download toggle** in settings card
   - Dynamic download status checking
   - Download models for offline translation
   - Delete models to free storage space
+  - Cancel in-progress downloads
   - 20+ supported languages
 
 **Migration Complete**: All ViewModels now use :data providers instead of legacy :app services
