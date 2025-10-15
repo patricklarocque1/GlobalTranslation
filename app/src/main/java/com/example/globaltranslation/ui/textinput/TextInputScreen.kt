@@ -23,6 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -56,6 +59,49 @@ fun TextInputScreen(
         }
     }
 
+    TextInputScreenContent(
+        uiState = uiState,
+        onSourceLanguageChange = viewModel::setSourceLanguage,
+        onTargetLanguageChange = viewModel::setTargetLanguage,
+        onUpdateInputText = viewModel::updateInputText,
+        onTranslate = {
+            viewModel.translateText()
+            keyboardController?.hide()
+        },
+        onClearInput = viewModel::clearInput,
+        onSpeakText = viewModel::speakText,
+        onCopyTranslation = { text -> copyToClipboard(context, text, "translation") },
+        onClearHistory = viewModel::clearHistory,
+        onCopyHistoryItemToInput = viewModel::copyToInput,
+        onClearError = viewModel::clearError,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TextInputScreenContent(
+    uiState: TextInputUiState,
+    onSourceLanguageChange: (String) -> Unit,
+    onTargetLanguageChange: (String) -> Unit,
+    onUpdateInputText: (String) -> Unit,
+    onTranslate: () -> Unit,
+    onClearInput: () -> Unit,
+    onSpeakText: (String, String) -> Unit,
+    onCopyTranslation: (String) -> Unit,
+    onClearHistory: () -> Unit,
+    onCopyHistoryItemToInput: (ConversationTurn) -> Unit,
+    onClearError: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Auto-dismiss errors after a short delay
+    uiState.error?.let { error ->
+        LaunchedEffect(error) {
+            kotlinx.coroutines.delay(3000)
+            onClearError()
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -65,13 +111,13 @@ fun TextInputScreen(
         LanguageSelectionCard(
             sourceLanguage = uiState.sourceLanguage,
             targetLanguage = uiState.targetLanguage,
-            onSourceLanguageChange = viewModel::setSourceLanguage,
-            onTargetLanguageChange = viewModel::setTargetLanguage,
+            onSourceLanguageChange = onSourceLanguageChange,
+            onTargetLanguageChange = onTargetLanguageChange,
             modifier = Modifier.fillMaxWidth()
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Warning banner for invalid language pair
         if (!uiState.isValidLanguagePair) {
             Card(
@@ -99,42 +145,33 @@ fun TextInputScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
-        
+
         // Input section
         TextInputCard(
             inputText = uiState.inputText,
-            onInputTextChange = viewModel::updateInputText,
-            onTranslate = {
-                viewModel.translateText()
-                keyboardController?.hide()
-            },
-            onClear = viewModel::clearInput,
+            onInputTextChange = onUpdateInputText,
+            onTranslate = onTranslate,
+            onClear = onClearInput,
             isTranslating = uiState.isTranslating,
             isValidLanguagePair = uiState.isValidLanguagePair,
             modifier = Modifier.fillMaxWidth()
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Translation result
         uiState.currentTranslation?.let { translation ->
             TranslationResultCard(
                 translation = translation,
-                onSpeakOriginal = {
-                    viewModel.speakText(translation.originalText, translation.sourceLang)
-                },
-                onSpeakTranslation = {
-                    viewModel.speakText(translation.translatedText, translation.targetLang)
-                },
-                onCopyTranslation = {
-                    copyToClipboard(context, translation.translatedText, "translation")
-                },
+                onSpeakOriginal = { onSpeakText(translation.originalText, translation.sourceLang) },
+                onSpeakTranslation = { onSpeakText(translation.translatedText, translation.targetLang) },
+                onCopyTranslation = { onCopyTranslation(translation.translatedText) },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
-        
+
         // History section
         if (uiState.translationHistory.isNotEmpty()) {
             Row(
@@ -147,11 +184,11 @@ fun TextInputScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
-                TextButton(onClick = viewModel::clearHistory) {
+                TextButton(onClick = onClearHistory) {
                     Text("Clear All")
                 }
             }
-            
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 8.dp)
@@ -159,15 +196,13 @@ fun TextInputScreen(
                 items(uiState.translationHistory) { translation ->
                     TranslationHistoryItem(
                         translation = translation,
-                        onCopyToInput = { viewModel.copyToInput(translation) },
-                        onCopyTranslation = {
-                            copyToClipboard(context, translation.translatedText, "translation")
-                        }
+                        onCopyToInput = { onCopyHistoryItemToInput(translation) },
+                        onCopyTranslation = { onCopyTranslation(translation.translatedText) }
                     )
                 }
             }
         }
-        
+
         // Error display
         uiState.error?.let { error ->
             Card(
@@ -183,6 +218,77 @@ fun TextInputScreen(
                     modifier = Modifier.padding(16.dp)
                 )
             }
+        }
+    }
+}
+
+// ----- Compose Preview support -----
+
+private class TextInputUiStatePreviewProvider : PreviewParameterProvider<TextInputUiState> {
+    override val values: Sequence<TextInputUiState> = sequenceOf(
+        // Empty input, default languages
+        TextInputUiState(),
+        // With a current translation and some history
+        TextInputUiState(
+            inputText = "Hello, how are you?",
+            sourceLanguage = TranslateLanguage.ENGLISH,
+            targetLanguage = TranslateLanguage.SPANISH,
+            currentTranslation = ConversationTurn(
+                originalText = "Hello, how are you?",
+                translatedText = "Hola, ¿cómo estás?",
+                sourceLang = TranslateLanguage.ENGLISH,
+                targetLang = TranslateLanguage.SPANISH,
+                timestamp = System.currentTimeMillis()
+            ),
+            translationHistory = listOf(
+                ConversationTurn(
+                    originalText = "Good morning",
+                    translatedText = "Buenos días",
+                    sourceLang = TranslateLanguage.ENGLISH,
+                    targetLang = TranslateLanguage.SPANISH,
+                    timestamp = System.currentTimeMillis() - 60_000
+                ),
+                ConversationTurn(
+                    originalText = "Where is the station?",
+                    translatedText = "¿Dónde está la estación?",
+                    sourceLang = TranslateLanguage.ENGLISH,
+                    targetLang = TranslateLanguage.SPANISH,
+                    timestamp = System.currentTimeMillis() - 120_000
+                )
+            )
+        ),
+        // Invalid pair warning (no English on either side)
+        TextInputUiState(
+            sourceLanguage = TranslateLanguage.FRENCH,
+            targetLanguage = TranslateLanguage.GERMAN,
+            inputText = "Bonjour",
+            error = null
+        )
+    )
+}
+
+@Preview(name = "Text Input - States", showBackground = true)
+@PreviewScreenSizes
+@Composable
+private fun TextInputScreenStatesPreview(
+    @PreviewParameter(TextInputUiStatePreviewProvider::class) state: TextInputUiState
+) {
+    GlobalTranslationTheme {
+        Surface {
+            TextInputScreenContent(
+                uiState = state,
+                onSourceLanguageChange = {},
+                onTargetLanguageChange = {},
+                onUpdateInputText = {},
+                onTranslate = {},
+                onClearInput = {},
+                onSpeakText = { _, _ -> },
+                onCopyTranslation = {},
+                onClearHistory = {},
+                onCopyHistoryItemToInput = {},
+                onClearError = {},
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
@@ -530,7 +636,20 @@ private fun copyToClipboard(context: Context, text: String, label: String = "tex
 private fun TextInputScreenPreview() {
     GlobalTranslationTheme {
         Surface {
-            // Preview would go here with mock data
+            TextInputScreenContent(
+                uiState = TextInputUiState(),
+                onSourceLanguageChange = {},
+                onTargetLanguageChange = {},
+                onUpdateInputText = {},
+                onTranslate = {},
+                onClearInput = {},
+                onSpeakText = { _, _ -> },
+                onCopyTranslation = {},
+                onClearHistory = {},
+                onCopyHistoryItemToInput = {},
+                onClearError = {},
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

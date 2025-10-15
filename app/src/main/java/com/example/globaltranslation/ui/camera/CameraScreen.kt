@@ -4,7 +4,7 @@ import android.Manifest
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
+import androidx.camera.core.Preview as CameraXPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
@@ -34,6 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.example.globaltranslation.ui.components.MultiDevicePreview
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -182,7 +187,7 @@ private fun CameraPreview(
             cameraProvider = cameraProviderFuture.get()
             
             // Preview use case
-            val preview = Preview.Builder().build().also {
+            val preview = CameraXPreview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
             
@@ -235,6 +240,25 @@ private fun CameraPreview(
  */
 @Composable
 private fun CameraOverlay(
+    uiState: CameraUiState,
+    onFlashToggle: () -> Unit,
+    onLanguagePickerClick: () -> Unit,
+    onClearResults: () -> Unit,
+    onCaptureClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    CameraOverlayContent(
+        uiState = uiState,
+        onFlashToggle = onFlashToggle,
+        onLanguagePickerClick = onLanguagePickerClick,
+        onClearResults = onClearResults,
+        onCaptureClick = onCaptureClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun CameraOverlayContent(
     uiState: CameraUiState,
     onFlashToggle: () -> Unit,
     onLanguagePickerClick: () -> Unit,
@@ -784,6 +808,47 @@ private fun LanguageSelectionCard(
                     contentDescription = "Selected",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+// ---- Preview support ----
+
+private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiState> {
+    override val values: Sequence<CameraUiState> = sequenceOf(
+        CameraUiState(),
+        CameraUiState(isFlashOn = true),
+        CameraUiState(
+            detectedTextBlocks = listOf(
+                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", android.graphics.Rect(0,0,10,10)),
+                DetectedTextBlock("WELCOME", "BIENVENIDO", android.graphics.Rect(0,0,10,10))
+            ),
+            isFrozen = true
+        ),
+        CameraUiState(error = "Models missing. Connect to WiFi to download.")
+    )
+}
+
+@Preview(name = "Camera Overlay States", showBackground = true)
+@PreviewScreenSizes
+@MultiDevicePreview
+@Composable
+private fun CameraOverlayStatesPreview(
+    @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState
+) {
+    com.example.globaltranslation.ui.theme.GlobalTranslationTheme {
+        androidx.compose.material3.Surface {
+            // Using a simple placeholder background to mimic camera backdrop
+            Box(modifier = Modifier.fillMaxSize()) {
+                CameraOverlayContent(
+                    uiState = state,
+                    onFlashToggle = {},
+                    onLanguagePickerClick = {},
+                    onClearResults = {},
+                    onCaptureClick = {},
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
