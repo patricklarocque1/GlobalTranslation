@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import com.example.globaltranslation.ui.components.MultiDevicePreview
+import com.example.globaltranslation.ui.components.DesignVariantPreview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.model.ConversationTurn
@@ -271,6 +272,7 @@ private class TextInputUiStatePreviewProvider : PreviewParameterProvider<TextInp
 @Preview(name = "Text Input - States", showBackground = true)
 @PreviewScreenSizes
 @MultiDevicePreview
+@DesignVariantPreview
 @Composable
 private fun TextInputScreenStatesPreview(
     @PreviewParameter(TextInputUiStatePreviewProvider::class) state: TextInputUiState

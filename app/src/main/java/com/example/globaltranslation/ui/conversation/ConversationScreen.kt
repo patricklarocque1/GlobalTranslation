@@ -83,6 +83,7 @@ import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.previewConversations
 import com.example.globaltranslation.ui.components.previewLanguages
+import com.example.globaltranslation.ui.components.DesignVariantPreview
 import com.google.mlkit.nl.translate.TranslateLanguage as MlKitTranslateLanguage
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.Row
@@ -91,6 +92,7 @@ import androidx.compose.material3.FilterChip
 
 // --- Live interactive preview ---
 @MultiDevicePreview
+@DesignVariantPreview
 @Composable
 private fun ConversationScreenLivePreview() {
     val state = remember {
@@ -415,6 +417,7 @@ private class ConversationUiStatePreviewProvider : PreviewParameterProvider<Conv
 @Preview(name = "Conversation States", showBackground = true)
 @PreviewScreenSizes
 @MultiDevicePreview
+@DesignVariantPreview
 @Composable
 private fun ConversationScreenStatesPreview(
     @PreviewParameter(ConversationUiStatePreviewProvider::class) state: ConversationUiState

@@ -24,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.example.globaltranslation.ui.components.MultiDevicePreview
+import com.example.globaltranslation.ui.components.DesignVariantPreview
 import com.google.mlkit.nl.translate.TranslateLanguage
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -645,6 +646,7 @@ private class LanguageUiStatePreviewProvider : PreviewParameterProvider<Language
 @Preview(name = "Language States", showBackground = true)
 @PreviewScreenSizes
 @MultiDevicePreview
+@DesignVariantPreview
 @Composable
 private fun LanguageScreenStatesPreview(
     @PreviewParameter(LanguageUiStatePreviewProvider::class) state: LanguageUiState
@@ -667,6 +669,7 @@ private fun LanguageScreenStatesPreview(
 // Live interactive preview for quick interactions
 @Preview(name = "Language Live", showBackground = true)
 @MultiDevicePreview
+@DesignVariantPreview
 @Composable
 private fun LanguageScreenLivePreview() {
     val initial = remember {

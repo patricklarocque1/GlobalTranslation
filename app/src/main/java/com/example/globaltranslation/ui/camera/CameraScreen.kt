@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.globaltranslation.ui.components.MultiDevicePreview
+import com.example.globaltranslation.ui.components.DesignVariantPreview
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -834,6 +835,7 @@ private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiSt
 @Preview(name = "Camera Overlay States", showBackground = true)
 @PreviewScreenSizes
 @MultiDevicePreview
+@DesignVariantPreview
 @Composable
 private fun CameraOverlayStatesPreview(
     @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState

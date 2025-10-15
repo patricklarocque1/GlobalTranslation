@@ -1,6 +1,9 @@
 package com.example.globaltranslation.ui.components
 
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewDynamicColors
+import androidx.compose.ui.tooling.preview.PreviewFontScale
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 
 // A multi-preview annotation you can apply to any @Composable preview function
 // to render common device sizes and both light/dark themes (stacked in the Preview pane).
@@ -9,3 +12,9 @@ import androidx.compose.ui.tooling.preview.Preview
 @Preview(name = "Tablet - Light", group = "Devices", device = "spec:width=1280dp,height=800dp,dpi=240", showBackground = true)
 @Preview(name = "Tablet - Dark", group = "Devices", device = "spec:width=1280dp,height=800dp,dpi=240", showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 annotation class MultiDevicePreview
+
+// A design variant annotation to multiply previews across font scales, light/dark, and dynamic colors.
+@PreviewLightDark
+@PreviewFontScale
+@PreviewDynamicColors
+annotation class DesignVariantPreview
