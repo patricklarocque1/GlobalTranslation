@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.globaltranslation.util.DeviceCompatibility
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -72,26 +74,46 @@ fun GloabTranslationApp() {
         }
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            when (currentDestination) {
-                AppDestinations.CONVERSATION -> {
-                    ConversationScreen(
-                        modifier = Modifier.padding(innerPadding)
+            // Animated content transition between screens
+            AnimatedContent(
+                targetState = currentDestination,
+                transitionSpec = {
+                    // Slide in from right and fade in, while sliding out to left and fading out
+                    slideInHorizontally(
+                        initialOffsetX = { it / 3 },
+                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                    ) + fadeIn(
+                        animationSpec = tween(300)
+                    ) togetherWith slideOutHorizontally(
+                        targetOffsetX = { -it / 3 },
+                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                    ) + fadeOut(
+                        animationSpec = tween(300)
                     )
-                }
-                AppDestinations.TEXT_INPUT -> {
-                    TextInputScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-                AppDestinations.CAMERA -> {
-                    CameraScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-                AppDestinations.LANGUAGES -> {
-                    LanguageScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                },
+                label = "screen_transition"
+            ) { destination ->
+                when (destination) {
+                    AppDestinations.CONVERSATION -> {
+                        ConversationScreen(
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
+                    AppDestinations.TEXT_INPUT -> {
+                        TextInputScreen(
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
+                    AppDestinations.CAMERA -> {
+                        CameraScreen(
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
+                    AppDestinations.LANGUAGES -> {
+                        LanguageScreen(
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
                 }
             }
         }

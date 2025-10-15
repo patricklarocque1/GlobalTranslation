@@ -10,12 +10,20 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.*
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -256,18 +264,35 @@ private fun CameraOverlay(
                 )
             }
             
-            // Language selector - Shows source -> target
-            val languageLabel = "${getLanguageName(uiState.sourceLanguageCode)} -> ${getLanguageName(uiState.targetLanguageCode)}"
-            FilterChip(
-                selected = false,
+            // Language selector - Shows source -> target with improved styling
+            val languageLabel = "${getLanguageName(uiState.sourceLanguageCode)} → ${getLanguageName(uiState.targetLanguageCode)}"
+            Surface(
                 onClick = onLanguagePickerClick,
-                label = { 
-                    Text(languageLabel)
-                },
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 3.dp,
                 modifier = Modifier
                     .testTag("camera_language_chip")
                     .semantics { contentDescription = "Select languages ($languageLabel)" }
-            )
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = languageLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
         }
         
         // Document-style translation display (merged content)
@@ -530,61 +555,83 @@ private fun CameraLanguagePickerDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(24.dp)
             ) {
-                Text(
-                    text = "Camera Translation Languages",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                Text(
-                    text = "Translate from",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
-                
-                // Source language selector
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(languages.entries.toList()) { (code, name) ->
-                        FilterChip(
-                            selected = code == selectedSource,
-                            onClick = { selectedSource = code },
-                            label = { Text(name) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
+                    Text(
+                        text = "Select Languages",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
                 
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                
                 Text(
-                    text = "Translate to",
+                    text = "From",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                // Target language selector
+                // Source language selector with modern cards
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .height(150.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(languages.entries.toList()) { (code, name) ->
-                        FilterChip(
-                            selected = code == selectedTarget,
-                            onClick = { selectedTarget = code },
-                            label = { Text(name) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
+                        LanguageSelectionCard(
+                            name = name,
+                            isSelected = code == selectedSource,
+                            onClick = { selectedSource = code }
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "To",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                // Target language selector with modern cards
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(languages.entries.toList()) { (code, name) ->
+                        LanguageSelectionCard(
+                            name = name,
+                            isSelected = code == selectedTarget,
+                            onClick = { selectedTarget = code }
                         )
                     }
                 }
@@ -593,19 +640,104 @@ private fun CameraLanguagePickerDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.End
+                        .padding(top = 24.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { onLanguagesSelected(selectedSource, selectedTarget) }
+                        onClick = { onLanguagesSelected(selectedSource, selectedTarget) },
+                        shape = MaterialTheme.shapes.large
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 4.dp)
+                        )
                         Text("Apply")
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Modern language selection card with animation.
+ */
+@Composable
+private fun LanguageSelectionCard(
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.0f else 0.98f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "card_scale"
+    )
+    
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            }
+        ),
+        border = if (isSelected) {
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        } else null,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 1.dp
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+            )
+            
+            AnimatedVisibility(
+                visible = isSelected,
+                enter = scaleIn() + fadeIn(),
+                exit = scaleOut() + fadeOut()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
