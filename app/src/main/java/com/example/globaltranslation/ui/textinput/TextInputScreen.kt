@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.DesignVariantPreview
 import com.example.globaltranslation.ui.components.PreviewScaffold
+import com.example.globaltranslation.ui.components.UiCheckPreview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.model.ConversationTurn
@@ -292,6 +293,151 @@ private fun TextInputScreenStatesPreview(
                 onCopyHistoryItemToInput = {},
                 onClearError = {},
                 modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+// UI check preview with extreme font scale/RTL via UiCheckPreview
+@UiCheckPreview
+@Composable
+private fun TextInputScreenUiCheckPreview() {
+    val longText = "This is a very long input line to stress wrapping and ellipsis behavior across different screen widths and font scales. " +
+            "It should push the layout to ensure no clipping or overlapping occurs."
+    val state = TextInputUiState(
+        inputText = longText,
+        sourceLanguage = TranslateLanguage.ENGLISH,
+        targetLanguage = TranslateLanguage.SPANISH,
+        currentTranslation = ConversationTurn(
+            originalText = longText,
+            translatedText = "Este es un texto de ejemplo muy largo para verificar el ajuste de línea y la accesibilidad.",
+            sourceLang = TranslateLanguage.ENGLISH,
+            targetLang = TranslateLanguage.SPANISH,
+            timestamp = System.currentTimeMillis()
+        ),
+        translationHistory = List(3) { idx ->
+            ConversationTurn(
+                originalText = "History item ${'$'}idx — ${'$'}longText",
+                translatedText = "Elemento de historial ${'$'}idx — traducido",
+                sourceLang = TranslateLanguage.ENGLISH,
+                targetLang = TranslateLanguage.SPANISH,
+                timestamp = System.currentTimeMillis() - (idx + 1) * 60000L
+            )
+        }
+    )
+    PreviewScaffold {
+        TextInputScreenContent(
+            uiState = state,
+            onSourceLanguageChange = {},
+            onTargetLanguageChange = {},
+            onUpdateInputText = {},
+            onTranslate = {},
+            onClearInput = {},
+            onSpeakText = { _, _ -> },
+            onCopyTranslation = {},
+            onClearHistory = {},
+            onCopyHistoryItemToInput = {},
+            onClearError = {},
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+// Live interactive preview to simulate typing, translating, clearing, and history interactions
+@Preview(name = "Text Input - Live", showBackground = true)
+@MultiDevicePreview
+@DesignVariantPreview
+@Composable
+private fun TextInputScreenLivePreview() {
+    // Seed with a small history so the list renders
+    val seedHistory = remember {
+        listOf(
+            ConversationTurn(
+                originalText = "Good morning",
+                translatedText = "Buenos días",
+                sourceLang = TranslateLanguage.ENGLISH,
+                targetLang = TranslateLanguage.SPANISH,
+                timestamp = System.currentTimeMillis() - 120_000
+            ),
+            ConversationTurn(
+                originalText = "How are you?",
+                translatedText = "¿Cómo estás?",
+                sourceLang = TranslateLanguage.ENGLISH,
+                targetLang = TranslateLanguage.SPANISH,
+                timestamp = System.currentTimeMillis() - 60_000
+            )
+        )
+    }
+
+    val state = remember {
+        mutableStateOf(
+            TextInputUiState(
+                inputText = "",
+                sourceLanguage = TranslateLanguage.ENGLISH,
+                targetLanguage = TranslateLanguage.SPANISH,
+                currentTranslation = null,
+                translationHistory = seedHistory,
+                isTranslating = false,
+                error = null
+            )
+        )
+    }
+
+    fun simulateTranslate() {
+        val text = state.value.inputText.trim()
+        if (text.isEmpty()) return
+        // Fake translation result for preview purposes
+        val translated = when (state.value.targetLanguage) {
+            TranslateLanguage.SPANISH -> "${'$'}text → Hola"
+            TranslateLanguage.FRENCH -> "${'$'}text → Salut"
+            TranslateLanguage.GERMAN -> "${'$'}text → Hallo"
+            else -> "${'$'}text (translated)"
+        }
+        val turn = ConversationTurn(
+            originalText = text,
+            translatedText = translated,
+            sourceLang = state.value.sourceLanguage,
+            targetLang = state.value.targetLanguage,
+            timestamp = System.currentTimeMillis()
+        )
+        state.value = state.value.copy(
+            currentTranslation = turn,
+            translationHistory = listOf(turn) + state.value.translationHistory,
+            inputText = "",
+            isTranslating = false,
+            error = null
+        )
+    }
+
+    PreviewScaffold {
+        TextInputScreenContent(
+            uiState = state.value,
+            onSourceLanguageChange = { code ->
+                state.value = state.value.copy(sourceLanguage = code)
+            },
+            onTargetLanguageChange = { code ->
+                state.value = state.value.copy(targetLanguage = code)
+            },
+            onUpdateInputText = { txt ->
+                state.value = state.value.copy(inputText = txt)
+            },
+            onTranslate = { simulateTranslate() },
+            onClearInput = {
+                state.value = state.value.copy(inputText = "", currentTranslation = null)
+            },
+            onSpeakText = { _, _ -> /* no-op in preview */ },
+            onCopyTranslation = { /* no-op in preview */ },
+            onClearHistory = {
+                state.value = state.value.copy(translationHistory = emptyList())
+            },
+            onCopyHistoryItemToInput = { turn ->
+                state.value = state.value.copy(
+                    inputText = turn.originalText,
+                    sourceLanguage = turn.sourceLang,
+                    targetLanguage = turn.targetLang
+                )
+            },
+            onClearError = { state.value = state.value.copy(error = null) },
+            modifier = Modifier.fillMaxSize()
         )
     }
 }

@@ -39,25 +39,45 @@ This document outlines the plan to implement comprehensive Android Studio previe
 
 ### ❌ What's Missing
 
+Status update (this pass):
+
+- Phase 1 is implemented across all screens with standardized annotations and theming wrappers.
+- New helper annotations: `DesignVariantPreview`, `FontScalePreview`, `DynamicColorPreview`.
+- New `PreviewScaffold` wrapper applied across previews for consistent theming.
+
+Gaps remaining:
+
+1. Interactive Mode Full Support
+    - ✅ ConversationScreen and LanguageScreen have live previews
+    - ✅ TextInputScreen and CameraScreen have live previews
+
+2. UI Check Mode Support
+     - Add accessibility validation previews and semantics audits
+
 #### 1. Advanced Preview Annotations (ALL SCREENS)
-- ❌ `@PreviewDynamicColors` - Dynamic color theming support
-- ❌ `@PreviewFontScale` - Accessibility font scaling (1.0x, 1.5x, 2.0x)
-- ❌ `@PreviewLightDark` - Simplified light/dark mode annotation
-- ❌ `@PreviewScreenSizes` missing from live preview variants
+- ✅ Implemented via composite `DesignVariantPreview` and helper sets (`FontScalePreview`, `DynamicColorPreview`)
+- ✅ `@PreviewLightDark` applied through `DesignVariantPreview`
+- ✅ `@PreviewFontScale` applied through `DesignVariantPreview`
+- ✅ `@PreviewDynamicColors` applied through `DesignVariantPreview`
+- ⚠️ Ensure live previews also include `@PreviewScreenSizes` where useful
 
 #### 2. Interactive Mode Full Support
-- ⚠️ **Partial implementation** - ConversationScreen has live preview, others don't
-- ❌ Camera and TextInput screens lack live interactive previews
-- ❌ LanguageScreen completely missing interactive preview
-- ❌ No preview-specific navigation state management
+
+- ✅ ConversationScreen and LanguageScreen have live previews
+- ✅ TextInputScreen and CameraScreen have live previews
 
 #### 3. UI Check Mode Support
-- ❌ No accessibility annotations (`contentDescription` inconsistencies)
-- ❌ No design system validation previews
+
+- Add accessibility validation previews
+- Audit `contentDescription` usage
+- Validate touch target sizes (48dp minimum)
+- Add color contrast validation previews
 - ❌ Missing touch target size checks (48dp minimum)
 - ❌ No color contrast validation previews
 
 #### 4. LanguageScreen Specific Issues
+
+- Implemented: extracted content, preview provider, state previews, and live preview
 - ❌ Empty preview - needs fake data
 - ❌ No state provider for different language states
 - ❌ No interactive download/delete testing
@@ -69,11 +89,24 @@ This document outlines the plan to implement comprehensive Android Studio previe
 
 ### Phase 1: Complete Standard Preview Support (All Screens)
 
+Status: COMPLETED
+
+- Added `@DesignVariantPreview` to all state and interactive previews
+- Ensured `@MultiDevicePreview` and `@PreviewScreenSizes` are present where appropriate
+- Standardized theming via `PreviewScaffold { ... }`
+
+Goal: Ensure every screen has comprehensive standard previews with multiple states, devices, themes, and accessibility configurations.
+
+- Added `@DesignVariantPreview` to all state and interactive previews
+- Ensured `@MultiDevicePreview` and `@PreviewScreenSizes` are present where appropriate
+- Standardized theming via `PreviewScaffold { ... }`
+
 **Goal**: Ensure every screen has comprehensive standard previews with multiple states, devices, themes, and accessibility configurations.
 
 #### 1.1 Add Missing Preview Annotations
 
 **Files to Modify**: All `*Screen.kt` files
+Files Modified: All `*Screen.kt` files
 
 ```kotlin
 // Add to ALL preview functions
@@ -97,6 +130,7 @@ private fun [Screen]Preview(
 ```
 
 **Required Imports**:
+Required Imports:
 ```kotlin
 import androidx.compose.ui.tooling.preview.PreviewDynamicColors
 import androidx.compose.ui.tooling.preview.PreviewFontScale
@@ -111,15 +145,12 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 **CameraScreen** - Already has 5 states ✅
 
 **LanguageScreen** - **NEEDS IMPLEMENTATION** ❌
+LanguageScreen - IMPLEMENTED ✅
 
 ```kotlin
 // Add to LanguageScreen.kt
 private class LanguageUiStatePreviewProvider : PreviewParameterProvider<LanguageUiState> {
     override val values: Sequence<LanguageUiState> = sequenceOf(
-        // State 1: Initial state with no models downloaded
-        LanguageUiState(
-            availableLanguages = listOf(
-                LanguageModel(TranslateLanguage.ENGLISH, "English", false, false),
                 LanguageModel(TranslateLanguage.SPANISH, "Spanish", false, false),
                 LanguageModel(TranslateLanguage.FRENCH, "French", false, false)
             )
@@ -156,6 +187,7 @@ private class LanguageUiStatePreviewProvider : PreviewParameterProvider<Language
     )
 }
 
+See actual implementation in `app/src/main/java/com/example/globaltranslation/ui/languages/LanguageScreen.kt`.
 @Preview(name = "Language States", showBackground = true)
 @PreviewScreenSizes
 @PreviewFontScale
@@ -226,10 +258,12 @@ private fun [Screen]LivePreview() {
 ```
 
 **Implementation Checklist**:
-- ✅ **ConversationScreen** - Already has `ConversationScreenLivePreview`
-- ❌ **TextInputScreen** - Add `TextInputScreenLivePreview`
-- ❌ **CameraScreen** - Add `CameraOverlayLivePreview`
-- ❌ **LanguageScreen** - Add `LanguageScreenLivePreview`
+
+- ✅ ConversationScreen - `ConversationScreenLivePreview`
+- ✅ TextInputScreen - `TextInputScreenLivePreview`
+- ✅ CameraScreen - `CameraOverlayLivePreview`
+- ✅ LanguageScreen - `LanguageScreenLivePreview`
+
 
 #### 2.2 TextInputScreen Interactive Preview
 
@@ -398,12 +432,14 @@ private fun LanguageScreenLivePreview() {
 #### 3.1 Accessibility Annotations Audit
 
 **Required Actions**:
+
 1. Audit all interactive elements for `contentDescription`
 2. Ensure all buttons have semantic descriptions
 3. Add `semantics { }` blocks for custom gestures
 4. Verify minimum touch target sizes (48dp)
 
 **Example Pattern**:
+
 ```kotlin
 IconButton(
     onClick = onFlashToggle,
@@ -616,6 +652,7 @@ annotation class DynamicColorPreview
 ## 📝 Implementation Checklist
 
 ### Phase 1: Standard Preview Support
+
 - [ ] Add `@PreviewFontScale`, `@PreviewLightDark`, `@PreviewDynamicColors` to all screens
 - [ ] Create `LanguageUiStatePreviewProvider` with 5 states
 - [ ] Extract `LanguageScreenContent` composable
@@ -623,6 +660,7 @@ annotation class DynamicColorPreview
 - [ ] Verify all screens compile with new annotations
 
 ### Phase 2: Interactive Mode
+
 - [ ] Add `TextInputScreenLivePreview` with state management
 - [ ] Add `CameraOverlayLivePreview` with state management
 - [ ] Add `LanguageScreenLivePreview` with state management
@@ -630,6 +668,7 @@ annotation class DynamicColorPreview
 - [ ] Document interactive preview usage in README
 
 ### Phase 3: UI Check Mode
+
 - [ ] Audit all screens for missing `contentDescription`
 - [ ] Add `semantics {}` blocks to custom interactive elements
 - [ ] Create color contrast validation previews
@@ -638,6 +677,7 @@ annotation class DynamicColorPreview
 - [ ] Run "UI Check" in Android Studio and fix issues
 
 ### Phase 4: Shared Utilities
+
 - [ ] Expand `PreviewData.kt` with language models and text blocks
 - [ ] Create `PreviewScaffolds.kt` with reusable preview wrappers
 - [ ] Enhance `Previews.kt` with font scale and dynamic color annotations
@@ -736,21 +776,25 @@ See `docs/PREVIEW_MODE_GUIDE.md` for detailed usage instructions.
 ## 🚀 Rollout Plan
 
 ### Week 1: Foundation
+
 - Implement Phase 1 (Standard Preview Support)
 - Focus on LanguageScreen completion
 - Add missing annotations to existing screens
 
 ### Week 2: Interactivity
+
 - Implement Phase 2 (Interactive Mode)
 - Add live previews to TextInput, Camera, Language screens
 - Test interactive mode thoroughly
 
 ### Week 3: Validation
+
 - Implement Phase 3 (UI Check Mode)
 - Audit and fix accessibility issues
 - Create validation previews
 
 ### Week 4: Enhancement & Documentation
+
 - Implement Phase 4 (Shared Utilities)
 - Write developer guide
 - Update README and documentation
@@ -771,11 +815,13 @@ See `docs/PREVIEW_MODE_GUIDE.md` for detailed usage instructions.
 ## 🎯 Future Enhancements
 
 ### Phase 5 (Optional): Preview Screenshots
+
 - Automate preview screenshot generation
 - Use for documentation and PR reviews
 - Create visual regression testing pipeline
 
 ### Phase 6 (Optional): Preview Performance Testing
+
 - Measure preview render times
 - Optimize slow preview functions
 - Implement preview-specific performance benchmarks
@@ -785,7 +831,8 @@ See `docs/PREVIEW_MODE_GUIDE.md` for detailed usage instructions.
 ## 📞 Support
 
 For questions or issues with preview implementation:
-1. Check Android Studio documentation: https://developer.android.com/jetpack/compose/tooling
+ 
+1. Check Android Studio documentation: [Compose tooling](https://developer.android.com/jetpack/compose/tooling)
 2. Review existing preview implementations in `ConversationScreen.kt`
 3. Consult `ui/components/Previews.kt` for annotation examples
 

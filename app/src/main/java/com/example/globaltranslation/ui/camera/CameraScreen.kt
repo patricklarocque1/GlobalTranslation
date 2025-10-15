@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.DesignVariantPreview
 import com.example.globaltranslation.ui.components.PreviewScaffold
+import com.example.globaltranslation.ui.components.UiCheckPreview
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -843,6 +844,92 @@ private fun CameraOverlayStatesPreview(
 ) {
     PreviewScaffold {
         // Using a simple placeholder background to mimic camera backdrop
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraOverlayContent(
+                uiState = state,
+                onFlashToggle = {},
+                onLanguagePickerClick = {},
+                onClearResults = {},
+                onCaptureClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// Live interactive overlay preview (no actual camera). Simulates flash, language change, capture, and clear.
+@Preview(name = "Camera Overlay Live", showBackground = true)
+@MultiDevicePreview
+@DesignVariantPreview
+@Composable
+private fun CameraOverlayLivePreview() {
+    val state = remember { mutableStateOf(CameraUiState()) }
+
+    fun cycleLanguages() {
+        val next = when (state.value.targetLanguageCode) {
+            com.google.mlkit.nl.translate.TranslateLanguage.SPANISH -> com.google.mlkit.nl.translate.TranslateLanguage.FRENCH
+            com.google.mlkit.nl.translate.TranslateLanguage.FRENCH -> com.google.mlkit.nl.translate.TranslateLanguage.GERMAN
+            else -> com.google.mlkit.nl.translate.TranslateLanguage.SPANISH
+        }
+        state.value = state.value.copy(targetLanguageCode = next)
+    }
+
+    fun simulateCapture() {
+        state.value = state.value.copy(
+            isFrozen = true,
+            isProcessing = false,
+            error = null,
+            detectedTextBlocks = listOf(
+                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", android.graphics.Rect(0, 0, 100, 40)),
+                DetectedTextBlock("WELCOME", "BIENVENIDO", android.graphics.Rect(0, 50, 120, 90))
+            )
+        )
+    }
+
+    fun clear() {
+        state.value = state.value.copy(
+            detectedTextBlocks = emptyList(),
+            isFrozen = false,
+            isProcessing = false,
+            error = null
+        )
+    }
+
+    PreviewScaffold {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraOverlayContent(
+                uiState = state.value,
+                onFlashToggle = { state.value = state.value.copy(isFlashOn = !state.value.isFlashOn) },
+                onLanguagePickerClick = { cycleLanguages() },
+                onClearResults = { clear() },
+                onCaptureClick = { simulateCapture() },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// UI-check preview with extreme text lengths and frozen state
+@UiCheckPreview
+@Composable
+private fun CameraOverlayUiCheckPreview() {
+    val state = CameraUiState(
+        isFlashOn = true,
+        isFrozen = true,
+        detectedTextBlocks = listOf(
+            DetectedTextBlock(
+                originalText = "THIS IS AN EXTREMELY LONG BLOCK OF ORIGINAL TEXT INTENDED TO STRESS WRAPPING, SPACING, AND SCROLLING IN THE DOCUMENT VIEW.",
+                translatedText = "ESTE ES UN BLOQUE EXTREMADAMENTE LARGO DE TEXTO ORIGINAL DESTINADO A PROBAR EL AJUSTE DE LÍNEA, ESPACIADO Y DESPLAZAMIENTO.",
+                boundingBox = android.graphics.Rect(0, 0, 200, 100)
+            ),
+            DetectedTextBlock(
+                originalText = "SECOND LONG PARAGRAPH WITH MORE CONTENT TO SEE HOW MULTIPLE ITEMS ARE MERGED AND DISPLAYED IN THE PREVIEW.",
+                translatedText = "SEGUNDO PÁRRAFO LARGO CON MÁS CONTENIDO PARA VER CÓMO SE COMBINAN Y MUESTRAN VARIOS ELEMENTOS EN LA VISTA.",
+                boundingBox = android.graphics.Rect(0, 110, 200, 200)
+            )
+        )
+    )
+    PreviewScaffold {
         Box(modifier = Modifier.fillMaxSize()) {
             CameraOverlayContent(
                 uiState = state,
