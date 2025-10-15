@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.DesignVariantPreview
+import com.example.globaltranslation.ui.components.PreviewScaffold
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.model.ConversationTurn
@@ -277,9 +278,8 @@ private class TextInputUiStatePreviewProvider : PreviewParameterProvider<TextInp
 private fun TextInputScreenStatesPreview(
     @PreviewParameter(TextInputUiStatePreviewProvider::class) state: TextInputUiState
 ) {
-    GlobalTranslationTheme {
-        Surface {
-            TextInputScreenContent(
+    PreviewScaffold {
+        TextInputScreenContent(
                 uiState = state,
                 onSourceLanguageChange = {},
                 onTargetLanguageChange = {},
@@ -292,8 +292,7 @@ private fun TextInputScreenStatesPreview(
                 onCopyHistoryItemToInput = {},
                 onClearError = {},
                 modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
     }
 }
 

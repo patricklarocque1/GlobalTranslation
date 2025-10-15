@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.DesignVariantPreview
+import com.example.globaltranslation.ui.components.PreviewScaffold
 import com.google.mlkit.nl.translate.TranslateLanguage
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -591,10 +592,9 @@ private fun PopularLanguagePairsCarousel(
 @PreviewScreenSizes
 @Composable
 private fun LanguageScreenPreview() {
-    GlobalTranslationTheme {
-        Surface {
-            // Basic empty preview for safety
-            LanguageScreenContent(
+    PreviewScaffold {
+        // Basic empty preview for safety
+        LanguageScreenContent(
                 uiState = LanguageUiState(),
                 onRefresh = {},
                 onToggleCellularDownloads = {},
@@ -602,8 +602,7 @@ private fun LanguageScreenPreview() {
                 onDeleteLanguage = {},
                 onCancelDownload = {},
                 modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
     }
 }
 
@@ -651,9 +650,8 @@ private class LanguageUiStatePreviewProvider : PreviewParameterProvider<Language
 private fun LanguageScreenStatesPreview(
     @PreviewParameter(LanguageUiStatePreviewProvider::class) state: LanguageUiState
 ) {
-    GlobalTranslationTheme {
-        Surface {
-            LanguageScreenContent(
+    PreviewScaffold {
+        LanguageScreenContent(
                 uiState = state,
                 onRefresh = {},
                 onToggleCellularDownloads = {},
@@ -661,8 +659,7 @@ private fun LanguageScreenStatesPreview(
                 onDeleteLanguage = {},
                 onCancelDownload = {},
                 modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
     }
 }
 
@@ -686,9 +683,8 @@ private fun LanguageScreenLivePreview() {
     }
     val state = remember { mutableStateOf(initial) }
     
-    GlobalTranslationTheme {
-        Surface {
-            LanguageScreenContent(
+    PreviewScaffold {
+        LanguageScreenContent(
                 uiState = state.value,
                 onRefresh = {
                     // Simulate refresh toggling a downloaded flag
@@ -723,7 +719,6 @@ private fun LanguageScreenLivePreview() {
                     )
                 },
                 modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
     }
 }

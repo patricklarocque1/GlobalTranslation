@@ -84,6 +84,7 @@ import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.previewConversations
 import com.example.globaltranslation.ui.components.previewLanguages
 import com.example.globaltranslation.ui.components.DesignVariantPreview
+import com.example.globaltranslation.ui.components.PreviewScaffold
 import com.google.mlkit.nl.translate.TranslateLanguage as MlKitTranslateLanguage
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.Row
@@ -105,9 +106,8 @@ private fun ConversationScreenLivePreview() {
             )
         )
     }
-    GlobalTranslationTheme {
-        Surface {
-            ConversationScreenContent(
+    PreviewScaffold {
+        ConversationScreenContent(
                 uiState = state.value,
                 hasAudioPermission = true,
                 onRequestAudioPermission = {},
@@ -132,8 +132,7 @@ private fun ConversationScreenLivePreview() {
                     state.value = state.value.copy(conversationHistory = emptyList())
                 },
                 modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
     }
 }
 
@@ -422,9 +421,8 @@ private class ConversationUiStatePreviewProvider : PreviewParameterProvider<Conv
 private fun ConversationScreenStatesPreview(
     @PreviewParameter(ConversationUiStatePreviewProvider::class) state: ConversationUiState
 ) {
-    GlobalTranslationTheme {
-        Surface {
-            ConversationScreenContent(
+    PreviewScaffold {
+        ConversationScreenContent(
                 uiState = state,
                 hasAudioPermission = true,
                 onRequestAudioPermission = {},
@@ -440,8 +438,7 @@ private fun ConversationScreenStatesPreview(
                 onStopListening = {},
                 onClearConversation = {},
                 modifier = Modifier.fillMaxSize()
-            )
-        }
+        )
     }
 }
 

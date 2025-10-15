@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.DesignVariantPreview
+import com.example.globaltranslation.ui.components.PreviewScaffold
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -840,19 +841,17 @@ private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiSt
 private fun CameraOverlayStatesPreview(
     @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState
 ) {
-    com.example.globaltranslation.ui.theme.GlobalTranslationTheme {
-        androidx.compose.material3.Surface {
-            // Using a simple placeholder background to mimic camera backdrop
-            Box(modifier = Modifier.fillMaxSize()) {
-                CameraOverlayContent(
-                    uiState = state,
-                    onFlashToggle = {},
-                    onLanguagePickerClick = {},
-                    onClearResults = {},
-                    onCaptureClick = {},
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+    PreviewScaffold {
+        // Using a simple placeholder background to mimic camera backdrop
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraOverlayContent(
+                uiState = state,
+                onFlashToggle = {},
+                onLanguagePickerClick = {},
+                onClearResults = {},
+                onCaptureClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
