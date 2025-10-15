@@ -15,11 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
+import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.google.mlkit.nl.translate.TranslateLanguage
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -43,6 +47,28 @@ fun LanguageScreen(
         }
     }
 
+    LanguageScreenContent(
+        uiState = uiState,
+        onRefresh = viewModel::refreshLanguages,
+        onToggleCellularDownloads = viewModel::toggleCellularDownloads,
+        onDownloadLanguage = viewModel::downloadLanguage,
+        onDeleteLanguage = viewModel::deleteLanguage,
+        onCancelDownload = viewModel::cancelDownload,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LanguageScreenContent(
+    uiState: LanguageUiState,
+    onRefresh: () -> Unit,
+    onToggleCellularDownloads: () -> Unit,
+    onDownloadLanguage: (String) -> Unit,
+    onDeleteLanguage: (String) -> Unit,
+    onCancelDownload: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -51,7 +77,7 @@ fun LanguageScreen(
         // Header
         LanguageScreenHeader(
             isLoading = uiState.isLoading,
-            onRefresh = viewModel::refreshLanguages
+            onRefresh = onRefresh
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -60,8 +86,8 @@ fun LanguageScreen(
         PopularLanguagePairsCarousel(
             onLanguagePairSelected = { (fromLang, toLang) ->
                 // Start downloading both models for the selected pair
-                viewModel.downloadLanguage(fromLang)
-                viewModel.downloadLanguage(toLang)
+                onDownloadLanguage(fromLang)
+                onDownloadLanguage(toLang)
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -95,7 +121,7 @@ fun LanguageScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Download language models to enable offline translation. All models are paired with English (e.g., English↔Spanish).",
+                    text = "Download language models to enable offline translation. All models are paired with English (e.g., English\u2194Spanish).",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -165,7 +191,7 @@ fun LanguageScreen(
                 }
                 Switch(
                     checked = uiState.allowCellularDownloads,
-                    onCheckedChange = { viewModel.toggleCellularDownloads() },
+                    onCheckedChange = { onToggleCellularDownloads() },
                     modifier = Modifier
                         .testTag("cellular_downloads_switch")
                         .semantics { contentDescription = "Toggle cellular downloads" }
@@ -189,14 +215,14 @@ fun LanguageScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-            items(uiState.availableLanguages) { language ->
-                LanguageModelItem(
-                    language = language,
-                    onDownload = { viewModel.downloadLanguage(language.code) },
-                    onDelete = { viewModel.deleteLanguage(language.code) },
-                    onCancel = { viewModel.cancelDownload(language.code) }
-                )
-            }
+                items(uiState.availableLanguages) { language ->
+                    LanguageModelItem(
+                        language = language,
+                        onDownload = { onDownloadLanguage(language.code) },
+                        onDelete = { onDeleteLanguage(language.code) },
+                        onCancel = { onCancelDownload(language.code) }
+                    )
+                }
             }
         }
         
@@ -566,7 +592,135 @@ private fun PopularLanguagePairsCarousel(
 private fun LanguageScreenPreview() {
     GlobalTranslationTheme {
         Surface {
-            // Preview would go here
+            // Basic empty preview for safety
+            LanguageScreenContent(
+                uiState = LanguageUiState(),
+                onRefresh = {},
+                onToggleCellularDownloads = {},
+                onDownloadLanguage = {},
+                onDeleteLanguage = {},
+                onCancelDownload = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// ---- Preview support for LanguageScreen ----
+
+private class LanguageUiStatePreviewProvider : PreviewParameterProvider<LanguageUiState> {
+    override val values: Sequence<LanguageUiState> = sequenceOf(
+        // Loading state
+        LanguageUiState(isLoading = true),
+        // Some downloaded, some not
+        LanguageUiState(
+            availableLanguages = listOf(
+                LanguageModel("en", "English", isDownloaded = true, isDownloading = false),
+                LanguageModel("es", "Spanish", isDownloaded = true, isDownloading = false),
+                LanguageModel("fr", "French", isDownloaded = false, isDownloading = false),
+                LanguageModel("de", "German", isDownloaded = false, isDownloading = false)
+            )
+        ),
+        // Active download with progress
+        LanguageUiState(
+            availableLanguages = listOf(
+                LanguageModel("en", "English", isDownloaded = true, isDownloading = false),
+                LanguageModel(
+                    code = "ja", name = "Japanese",
+                    isDownloaded = false, isDownloading = true,
+                    downloadProgress = 0.42f, downloadStatus = DownloadStatus.DOWNLOADING
+                )
+            )
+        ),
+        // Error state
+        LanguageUiState(
+            availableLanguages = listOf(
+                LanguageModel("en", "English", isDownloaded = true, isDownloading = false)
+            ),
+            error = "WiFi required. Will retry on WiFi or enable cellular downloads."
+        )
+    )
+}
+
+@Preview(name = "Language States", showBackground = true)
+@PreviewScreenSizes
+@MultiDevicePreview
+@Composable
+private fun LanguageScreenStatesPreview(
+    @PreviewParameter(LanguageUiStatePreviewProvider::class) state: LanguageUiState
+) {
+    GlobalTranslationTheme {
+        Surface {
+            LanguageScreenContent(
+                uiState = state,
+                onRefresh = {},
+                onToggleCellularDownloads = {},
+                onDownloadLanguage = {},
+                onDeleteLanguage = {},
+                onCancelDownload = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// Live interactive preview for quick interactions
+@Preview(name = "Language Live", showBackground = true)
+@MultiDevicePreview
+@Composable
+private fun LanguageScreenLivePreview() {
+    val initial = remember {
+        LanguageUiState(
+            availableLanguages = listOf(
+                LanguageModel("en", "English", isDownloaded = true, isDownloading = false),
+                LanguageModel("es", "Spanish", isDownloaded = true, isDownloading = false),
+                LanguageModel("fr", "French", isDownloaded = false, isDownloading = false),
+                LanguageModel("de", "German", isDownloaded = false, isDownloading = false),
+                LanguageModel("ja", "Japanese", isDownloaded = false, isDownloading = false)
+            ),
+            allowCellularDownloads = false
+        )
+    }
+    val state = remember { mutableStateOf(initial) }
+    
+    GlobalTranslationTheme {
+        Surface {
+            LanguageScreenContent(
+                uiState = state.value,
+                onRefresh = {
+                    // Simulate refresh toggling a downloaded flag
+                    state.value = state.value.copy(
+                        availableLanguages = state.value.availableLanguages.map {
+                            if (it.code == "fr") it.copy(isDownloaded = !it.isDownloaded) else it
+                        }
+                    )
+                },
+                onToggleCellularDownloads = {
+                    state.value = state.value.copy(allowCellularDownloads = !state.value.allowCellularDownloads)
+                },
+                onDownloadLanguage = { code ->
+                    state.value = state.value.copy(
+                        availableLanguages = state.value.availableLanguages.map {
+                            if (it.code == code) it.copy(isDownloading = true, downloadStatus = DownloadStatus.DOWNLOADING, downloadProgress = 0.4f) else it
+                        }
+                    )
+                },
+                onDeleteLanguage = { code ->
+                    state.value = state.value.copy(
+                        availableLanguages = state.value.availableLanguages.map {
+                            if (it.code == code) it.copy(isDownloaded = false) else it
+                        }
+                    )
+                },
+                onCancelDownload = { code ->
+                    state.value = state.value.copy(
+                        availableLanguages = state.value.availableLanguages.map {
+                            if (it.code == code) it.copy(isDownloading = false, downloadProgress = null, downloadStatus = DownloadStatus.PAUSED) else it
+                        }
+                    )
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
