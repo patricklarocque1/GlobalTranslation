@@ -1,0 +1,46 @@
+# Android CI workflow for GlobalTranslation
+# AGP 8.13.0 is now published and available in Google Maven as of Oct 2025.
+# Previous CI failures were due to missing artifacts in Google Maven and lack of a workflow file.
+# This workflow will:
+#  - Build with AGP 8.13.0 (now resolvable in CI)
+#  - Upload debug APK for inspection
+#  - Use JDK 21 (matches local JVM target)
+# If future AGP plugin resolution errors occur, check Google Maven for artifact availability and CI runner repository config.
+name: Android CI
+
+on:
+  push:
+    branches: [ main, copilot/update-ui-ux-documentation ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build with Gradle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Cache Gradle files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Build project
+        run: ./gradlew build --warning-mode=all
+      - name: Assemble Debug APK
+        run: ./gradlew :app:assembleDebug --warning-mode=all
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
