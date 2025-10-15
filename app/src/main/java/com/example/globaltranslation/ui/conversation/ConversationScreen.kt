@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.R
 import com.example.globaltranslation.model.ConversationTurn
 import com.example.globaltranslation.ui.components.LanguagePickerButton
+import com.example.globaltranslation.ui.components.TwoLanguagePickerButton
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
 
@@ -265,44 +266,33 @@ private fun LanguageSelectionRow(
     onAutoPlayToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var sameWarning by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            // Source language
-            LanguagePickerButton(
-                selectedLanguageCode = sourceLanguage,
-                onLanguageSelected = { language ->
-                    onSourceLanguageChange(language)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+            TwoLanguagePickerButton(
+                sourceLanguageCode = sourceLanguage,
+                targetLanguageCode = targetLanguage,
+                onLanguagesSelected = { from: String, to: String ->
+                    sameWarning = from == to
+                    if (!sameWarning) {
+                        onSourceLanguageChange(from)
+                        onTargetLanguageChange(to)
+                    }
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .testTag("conversation_source_language")
-            )
-            
-            // Swap button
-            IconButton(onClick = onSwapLanguages) {
-                Icon(
-                    Icons.Default.SwapHoriz,
-                    contentDescription = "Swap languages"
-                )
-            }
-            
-            // Target language
-            LanguagePickerButton(
-                selectedLanguageCode = targetLanguage,
-                onLanguageSelected = { language ->
-                    onTargetLanguageChange(language)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("conversation_target_language")
+                    .testTag("conversation_languages")
             )
             
             // Auto-play toggle
@@ -312,6 +302,26 @@ private fun LanguageSelectionRow(
                     contentDescription = if (autoPlayEnabled) "Auto-play enabled" else "Auto-play disabled",
                     tint = if (autoPlayEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            }
+            if (sameWarning) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "From and To can't be the same.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

@@ -29,6 +29,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.model.ConversationTurn
 import com.example.globaltranslation.ui.components.LanguagePickerButton
+import com.example.globaltranslation.ui.components.TwoLanguagePickerButton
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.google.mlkit.nl.translate.TranslateLanguage
 import androidx.compose.ui.semantics.contentDescription
@@ -66,7 +67,6 @@ fun TextInputScreen(
             targetLanguage = uiState.targetLanguage,
             onSourceLanguageChange = viewModel::setSourceLanguage,
             onTargetLanguageChange = viewModel::setTargetLanguage,
-            onSwapLanguages = viewModel::swapLanguages,
             modifier = Modifier.fillMaxWidth()
         )
         
@@ -193,51 +193,54 @@ private fun LanguageSelectionCard(
     targetLanguage: String,
     onSourceLanguageChange: (String) -> Unit,
     onTargetLanguageChange: (String) -> Unit,
-    onSwapLanguages: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var sameWarning by remember { mutableStateOf(false) }
     Card(modifier = modifier) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            // Source language
-            LanguagePickerButton(
-                selectedLanguageCode = sourceLanguage,
-                onLanguageSelected = { language ->
-                    onSourceLanguageChange(language)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("source_language_chip")
-            )
-            
-            // Swap button
-            IconButton(
-                onClick = onSwapLanguages,
-                modifier = Modifier
-                    .testTag("swap_languages_btn")
-                    .semantics { contentDescription = "Swap languages" }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Default.SwapHoriz,
-                    contentDescription = null
-                )
-            }
-            
-            // Target language
-            LanguagePickerButton(
-                selectedLanguageCode = targetLanguage,
-                onLanguageSelected = { language ->
-                    onTargetLanguageChange(language)
+            TwoLanguagePickerButton(
+                sourceLanguageCode = sourceLanguage,
+                targetLanguageCode = targetLanguage,
+                onLanguagesSelected = { from: String, to: String ->
+                    sameWarning = from == to
+                    if (!sameWarning) {
+                        onSourceLanguageChange(from)
+                        onTargetLanguageChange(to)
+                    }
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .testTag("target_language_chip")
+                    .testTag("textinput_languages")
             )
+            }
+            if (sameWarning) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "From and To can't be the same.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         }
     }
 }

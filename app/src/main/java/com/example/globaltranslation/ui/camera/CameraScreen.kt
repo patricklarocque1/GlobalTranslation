@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -85,7 +87,6 @@ fun CameraScreen(
                 // Overlay UI
                 var showLanguagePicker by remember { mutableStateOf(false) }
                 
-                val context = LocalContext.current
                 val executor = remember { Executors.newSingleThreadExecutor() }
                 
                 DisposableEffect(Unit) {
@@ -534,26 +535,38 @@ private fun CameraLanguagePickerDialog(
 ) {
     var selectedSource by remember { mutableStateOf(currentSourceLanguage) }
     var selectedTarget by remember { mutableStateOf(currentTargetLanguage) }
+    val isSameLanguageSelected by remember {
+        derivedStateOf { selectedSource == selectedTarget }
+    }
     
-    val languages = mapOf(
-        com.google.mlkit.nl.translate.TranslateLanguage.ENGLISH to "English",
-        com.google.mlkit.nl.translate.TranslateLanguage.SPANISH to "Spanish",
-        com.google.mlkit.nl.translate.TranslateLanguage.FRENCH to "French",
-        com.google.mlkit.nl.translate.TranslateLanguage.GERMAN to "German",
-        com.google.mlkit.nl.translate.TranslateLanguage.ITALIAN to "Italian",
-        com.google.mlkit.nl.translate.TranslateLanguage.PORTUGUESE to "Portuguese",
-        com.google.mlkit.nl.translate.TranslateLanguage.CHINESE to "Chinese",
-        com.google.mlkit.nl.translate.TranslateLanguage.JAPANESE to "Japanese",
-        com.google.mlkit.nl.translate.TranslateLanguage.KOREAN to "Korean",
-        com.google.mlkit.nl.translate.TranslateLanguage.RUSSIAN to "Russian",
-        com.google.mlkit.nl.translate.TranslateLanguage.ARABIC to "Arabic",
-        com.google.mlkit.nl.translate.TranslateLanguage.HINDI to "Hindi"
-    )
+    val languages = remember {
+        mapOf(
+            com.google.mlkit.nl.translate.TranslateLanguage.ENGLISH to "English",
+            com.google.mlkit.nl.translate.TranslateLanguage.SPANISH to "Spanish",
+            com.google.mlkit.nl.translate.TranslateLanguage.FRENCH to "French",
+            com.google.mlkit.nl.translate.TranslateLanguage.GERMAN to "German",
+            com.google.mlkit.nl.translate.TranslateLanguage.ITALIAN to "Italian",
+            com.google.mlkit.nl.translate.TranslateLanguage.PORTUGUESE to "Portuguese",
+            com.google.mlkit.nl.translate.TranslateLanguage.CHINESE to "Chinese",
+            com.google.mlkit.nl.translate.TranslateLanguage.JAPANESE to "Japanese",
+            com.google.mlkit.nl.translate.TranslateLanguage.KOREAN to "Korean",
+            com.google.mlkit.nl.translate.TranslateLanguage.RUSSIAN to "Russian",
+            com.google.mlkit.nl.translate.TranslateLanguage.ARABIC to "Arabic",
+            com.google.mlkit.nl.translate.TranslateLanguage.HINDI to "Hindi"
+        )
+    }
+    val languageEntries = remember(languages) { languages.entries.toList() }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.96f)
+                .fillMaxHeight(0.9f)
                 .padding(16.dp),
             shape = MaterialTheme.shapes.extraLarge,
             colors = CardDefaults.cardColors(
@@ -562,7 +575,9 @@ private fun CameraLanguagePickerDialog(
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
             ) {
                 // Header with close button
                 Row(
@@ -575,59 +590,66 @@ private fun CameraLanguagePickerDialog(
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            // Swap selected languages quickly
+                            val tmp = selectedSource
+                            selectedSource = selectedTarget
+                            selectedTarget = tmp
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = "Swap languages",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
                 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                 
-                Text(
-                    text = "From",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                // Source language selector with modern cards
+                // Single smooth-scrolling list for both sections
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp)
                 ) {
-                    items(languages.entries.toList()) { (code, name) ->
+                    item {
+                        Text(
+                            text = "From",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(languageEntries, key = { it.key }) { (code, name) ->
                         LanguageSelectionCard(
                             name = name,
                             isSelected = code == selectedSource,
                             onClick = { selectedSource = code }
                         )
                     }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "To",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                // Target language selector with modern cards
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(languages.entries.toList()) { (code, name) ->
+                    item { Spacer(modifier = Modifier.height(12.dp)) }
+                    item {
+                        Text(
+                            text = "To",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(languageEntries, key = { it.key + "_target" }) { (code, name) ->
                         LanguageSelectionCard(
                             name = name,
                             isSelected = code == selectedTarget,
@@ -636,11 +658,35 @@ private fun CameraLanguagePickerDialog(
                     }
                 }
                 
+                // Tiny warning when both selections are the same
+                if (isSameLanguageSelected) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "From and To can't be the same.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
                 // Action buttons
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp),
+                        .padding(top = 16.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -650,6 +696,7 @@ private fun CameraLanguagePickerDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { onLanguagesSelected(selectedSource, selectedTarget) },
+                        enabled = !isSameLanguageSelected,
                         shape = MaterialTheme.shapes.large
                     ) {
                         Icon(
