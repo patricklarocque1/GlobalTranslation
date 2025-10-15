@@ -40,8 +40,9 @@ These are production-quality features that weren't mentioned in README.md, Proje
 - **Project Plan.md**: Updated ConversationScreen and LanguageScreen sections
 - **FEATURE_PLAN.md**: Changed Phase 7 from "FUTURE" to "PARTIALLY IMPLEMENTED"
 
-### 3. Fixed Build Issue
-- Changed AGP version from 8.13.0 (doesn't exist) to 8.6.1
+### 3. Build Configuration (Updated)
+- **Current**: AGP 8.13.0 with Gradle 8.13 (stable versions)
+- **JVM Target**: Upgraded to JVM 21 (LTS) across all modules for improved performance
 
 ---
 

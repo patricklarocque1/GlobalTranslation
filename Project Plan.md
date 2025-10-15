@@ -126,7 +126,7 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Hilt Version:** 2.57.2
 - **Dependencies:** All managed through `gradle/libs.versions.toml`
 - **Build Status:** All builds successful, app running on devices
-- **JVM Target:** 11 (aligned between Java and Kotlin)
+- **JVM Target:** 21 (aligned between Java and Kotlin - LTS version)
 - **16KB Page Size:** Full ARM64 support with Google Play compliance
 
 ### Architecture ✅ COMPLETE & VERIFIED
@@ -183,10 +183,10 @@ All planned features have been successfully implemented with:
    - **Solution**: Added `alias(libs.plugins.kotlin.android)` to plugins block
    - **Impact**: Enables proper Kotlin compilation and Hilt code generation
 
-3. **JVM Target Mismatch** ✅
-   - **Issue**: Java targeted JVM 11 but Kotlin defaulted to JVM 21
-   - **Solution**: Added `kotlinOptions { jvmTarget = "11" }` to align with Java
-   - **Impact**: Resolves compilation errors and ensures bytecode compatibility
+3. **JVM Target Upgrade** ✅
+   - **Resolution**: Upgraded all modules to target JVM 21 (LTS version)
+   - **Solution**: Aligned both Java and Kotlin to JVM 21 across :app, :data, and :core modules
+   - **Impact**: Access to modern Java features, improved performance and security, full AGP 8.13 support
 
 4. **UI Component Parameter Mismatches** ✅
    - **Issue**: `LanguagePickerButton` calls used wrong parameter names

@@ -14,7 +14,7 @@ applyTo: '**/*'
 - **Kotlin Version**: Kotlin 2.2.20 (latest stable)
 - **KSP Version**: 2.2.20-2.0.2 (matches Kotlin version - note: KSP versioning changed from 1.0.x to 2.0.x)
 - **Hilt Version**: 2.57.2
-- **JVM Target**: 11 (must be aligned between Java and Kotlin compileOptions)
+- **JVM Target**: 21 (must be aligned between Java and Kotlin compileOptions - uses LTS version)
 - **Build command**: Use `.\gradlew build` (PowerShell) or `./gradlew build` (bash)
 - **16KB Page Size**: Full ARM64 support with Google Play compliance
 
@@ -283,15 +283,15 @@ data class ConversationUiState(
       alias(libs.plugins.hilt)
   }
   ```
-- **JVM Target Alignment**: Both Java and Kotlin must target JVM 11:
+- **JVM Target Alignment**: Both Java and Kotlin must target JVM 21:
   ```kotlin
   compileOptions {
-      sourceCompatibility = JavaVersion.VERSION_11
-      targetCompatibility = JavaVersion.VERSION_11
+      sourceCompatibility = JavaVersion.VERSION_21
+      targetCompatibility = JavaVersion.VERSION_21
   }
   kotlin {
       compilerOptions {
-          jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+          jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
       }
   }
   // Note: kotlinOptions is deprecated, use kotlin.compilerOptions instead

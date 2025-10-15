@@ -64,7 +64,7 @@ This app supports Android devices with **16KB memory pages** (ARM64):
 - **Kotlin**: 2.2.20 (latest stable)
 - **KSP**: 2.2.20-2.0.2 (matching Kotlin version)
 - **Hilt**: 2.57.2
-- **JVM Target**: 11 (Java & Kotlin aligned)
+- **JVM Target**: 21 (Java & Kotlin aligned - LTS version)
 
 ### Stable Build Configuration
 
@@ -82,12 +82,12 @@ plugins {
 
 // JVM target aligned between Java and Kotlin
 compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
@@ -366,12 +366,12 @@ ksp = "2.2.20-2.0.2"  # Not 1.0.20!
 ```kotlin
 // In app/build.gradle.kts
 compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 ```
