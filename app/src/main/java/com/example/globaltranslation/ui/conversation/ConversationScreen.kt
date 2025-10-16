@@ -470,7 +470,7 @@ fun ConversationScreenUiCheckPreview() {
 @DesignVariantPreview
 @Composable
 fun ConversationScreenStatesPreview(
-    @PreviewParameter(ConversationUiStatePreviewProvider::class) state: ConversationUiState
+    @PreviewParameter(ConversationUiStatePreviewProvider::class) state: ConversationUiState = ConversationUiState()
 ) {
     PreviewScaffold {
         ConversationScreenContent(

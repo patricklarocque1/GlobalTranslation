@@ -649,7 +649,7 @@ private class LanguageUiStatePreviewProvider : PreviewParameterProvider<Language
 @DesignVariantPreview
 @Composable
 fun LanguageScreenStatesPreview(
-    @PreviewParameter(LanguageUiStatePreviewProvider::class) state: LanguageUiState
+    @PreviewParameter(LanguageUiStatePreviewProvider::class) state: LanguageUiState = LanguageUiState()
 ) {
     PreviewScaffold {
         LanguageScreenContent(
