@@ -277,7 +277,7 @@ private class TextInputUiStatePreviewProvider : PreviewParameterProvider<TextInp
 @DesignVariantPreview
 @Composable
 fun TextInputScreenStatesPreview(
-    @PreviewParameter(TextInputUiStatePreviewProvider::class) state: TextInputUiState
+    @PreviewParameter(TextInputUiStatePreviewProvider::class) state: TextInputUiState = TextInputUiState()
 ) {
     PreviewScaffold {
         TextInputScreenContent(
