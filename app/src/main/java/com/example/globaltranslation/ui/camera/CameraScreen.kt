@@ -842,7 +842,7 @@ private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiSt
 @DesignVariantPreview
 @Composable
 fun CameraOverlayStatesPreview(
-    @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState = CameraUiState()
+    @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState
 ) {
     PreviewScaffold {
         // Using a simple placeholder background to mimic camera backdrop
