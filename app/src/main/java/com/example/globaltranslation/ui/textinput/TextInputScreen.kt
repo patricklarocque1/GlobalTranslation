@@ -276,7 +276,7 @@ private class TextInputUiStatePreviewProvider : PreviewParameterProvider<TextInp
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun TextInputScreenStatesPreview(
+fun TextInputScreenStatesPreview(
     @PreviewParameter(TextInputUiStatePreviewProvider::class) state: TextInputUiState
 ) {
     PreviewScaffold {
@@ -300,7 +300,7 @@ private fun TextInputScreenStatesPreview(
 // UI check preview with extreme font scale/RTL via UiCheckPreview
 @UiCheckPreview
 @Composable
-private fun TextInputScreenUiCheckPreview() {
+fun TextInputScreenUiCheckPreview() {
     val longText = "This is a very long input line to stress wrapping and ellipsis behavior across different screen widths and font scales. " +
             "It should push the layout to ensure no clipping or overlapping occurs."
     val state = TextInputUiState(
@@ -347,7 +347,7 @@ private fun TextInputScreenUiCheckPreview() {
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun TextInputScreenLivePreview() {
+fun TextInputScreenLivePreview() {
     // Seed with a small history so the list renders
     val seedHistory = remember {
         listOf(

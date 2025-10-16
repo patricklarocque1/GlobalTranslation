@@ -839,7 +839,7 @@ private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiSt
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun CameraOverlayStatesPreview(
+fun CameraOverlayStatesPreview(
     @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState
 ) {
     PreviewScaffold {
@@ -862,7 +862,7 @@ private fun CameraOverlayStatesPreview(
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun CameraOverlayLivePreview() {
+fun CameraOverlayLivePreview() {
     val state = remember { mutableStateOf(CameraUiState()) }
 
     fun cycleLanguages() {
@@ -912,7 +912,7 @@ private fun CameraOverlayLivePreview() {
 // UI-check preview with extreme text lengths and frozen state
 @UiCheckPreview
 @Composable
-private fun CameraOverlayUiCheckPreview() {
+fun CameraOverlayUiCheckPreview() {
     val state = CameraUiState(
         isFlashOn = true,
         isFrozen = true,

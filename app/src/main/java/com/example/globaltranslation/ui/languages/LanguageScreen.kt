@@ -26,6 +26,7 @@ import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
 import com.example.globaltranslation.ui.components.MultiDevicePreview
 import com.example.globaltranslation.ui.components.DesignVariantPreview
 import com.example.globaltranslation.ui.components.PreviewScaffold
+import com.example.globaltranslation.ui.components.UiCheckPreview
 import com.google.mlkit.nl.translate.TranslateLanguage
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -591,7 +592,7 @@ private fun PopularLanguagePairsCarousel(
 
 @PreviewScreenSizes
 @Composable
-private fun LanguageScreenPreview() {
+fun LanguageScreenPreview() {
     PreviewScaffold {
         // Basic empty preview for safety
         LanguageScreenContent(
@@ -647,7 +648,7 @@ private class LanguageUiStatePreviewProvider : PreviewParameterProvider<Language
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun LanguageScreenStatesPreview(
+fun LanguageScreenStatesPreview(
     @PreviewParameter(LanguageUiStatePreviewProvider::class) state: LanguageUiState
 ) {
     PreviewScaffold {
@@ -668,7 +669,7 @@ private fun LanguageScreenStatesPreview(
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun LanguageScreenLivePreview() {
+fun LanguageScreenLivePreview() {
     val initial = remember {
         LanguageUiState(
             availableLanguages = listOf(
@@ -722,3 +723,39 @@ private fun LanguageScreenLivePreview() {
         )
     }
 }
+
+// UI-check preview to stress layout with extreme font scale/RTL and mixed states
+@UiCheckPreview
+@Composable
+fun LanguageScreenUiCheckPreview() {
+    val state = LanguageUiState(
+        isLoading = false,
+        allowCellularDownloads = true,
+        availableLanguages = listOf(
+            LanguageModel("en", "English", isDownloaded = true, isDownloading = false),
+            LanguageModel("es", "Spanish", isDownloaded = true, isDownloading = false),
+            LanguageModel(
+                code = "fr", name = "French",
+                isDownloaded = false, isDownloading = true,
+                downloadProgress = 0.65f, downloadStatus = DownloadStatus.DOWNLOADING
+            ),
+            LanguageModel(
+                code = "de", name = "German",
+                isDownloaded = false, isDownloading = false
+            )
+        ),
+        error = "WiFi required for first-time downloads. Enable cellular downloads if needed."
+    )
+    PreviewScaffold {
+        LanguageScreenContent(
+            uiState = state,
+            onRefresh = {},
+            onToggleCellularDownloads = {},
+            onDownloadLanguage = {},
+            onDeleteLanguage = {},
+            onCancelDownload = {},
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+

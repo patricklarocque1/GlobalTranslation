@@ -85,6 +85,7 @@ import com.example.globaltranslation.ui.components.previewConversations
 import com.example.globaltranslation.ui.components.previewLanguages
 import com.example.globaltranslation.ui.components.DesignVariantPreview
 import com.example.globaltranslation.ui.components.PreviewScaffold
+import com.example.globaltranslation.ui.components.UiCheckPreview
 import com.google.mlkit.nl.translate.TranslateLanguage as MlKitTranslateLanguage
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.Row
@@ -95,7 +96,7 @@ import androidx.compose.material3.FilterChip
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun ConversationScreenLivePreview() {
+fun ConversationScreenLivePreview() {
     val state = remember {
         mutableStateOf(
             ConversationUiState(
@@ -413,12 +414,62 @@ private class ConversationUiStatePreviewProvider : PreviewParameterProvider<Conv
     )
 }
 
+// UI-check preview with extreme font scale/RTL and stress states
+@UiCheckPreview
+@Composable
+fun ConversationScreenUiCheckPreview() {
+    val longText = "THIS IS A VERY LONG PREVIEW TEXT TO STRESS WRAPPING, ACCESSIBILITY, AND LAYOUT BEHAVIOR IN THE CONVERSATION SCREEN PREVIEW. " +
+            "IT SHOULD ENSURE NO CLIPPING OCCURS AND TOUCH TARGETS REMAIN 48DP+ WHERE REQUIRED."
+    val state = ConversationUiState(
+        conversationHistory = listOf(
+            ConversationTurn(
+                originalText = longText,
+                translatedText = "ESTE ES UN TEXTO MUY LARGO PARA PROBAR EL AJUSTE Y LA ACCESIBILIDAD.",
+                sourceLang = MlKitTranslateLanguage.ENGLISH,
+                targetLang = MlKitTranslateLanguage.SPANISH
+            )
+        ),
+        // Choose a non-English pair to trigger invalid pair banner
+        sourceLanguage = MlKitTranslateLanguage.FRENCH,
+        targetLanguage = MlKitTranslateLanguage.GERMAN,
+        isListening = false,
+        isListeningReady = false,
+        isDetectingSpeech = false,
+        partialSpeechText = longText,
+        isTranslating = false,
+        isRefreshing = false,
+        savedHistory = listOf(
+            ConversationTurn("Thanks", "Gracias", MlKitTranslateLanguage.ENGLISH, MlKitTranslateLanguage.SPANISH)
+        ),
+        showSavedHistory = true
+    )
+    PreviewScaffold {
+        ConversationScreenContent(
+            uiState = state,
+            hasAudioPermission = false, // Force permission warning state
+            onRequestAudioPermission = {},
+            onRefresh = {},
+            onSpeakText = { _, _ -> },
+            onDeleteSaved = {},
+            onHideSaved = {},
+            onSourceLanguageChange = {},
+            onTargetLanguageChange = {},
+            onSwapLanguages = {},
+            onAutoPlayToggle = {},
+            onStartListening = {},
+            onStopListening = {},
+            onClearConversation = {},
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
 @Preview(name = "Conversation States", showBackground = true)
 @PreviewScreenSizes
 @MultiDevicePreview
 @DesignVariantPreview
 @Composable
-private fun ConversationScreenStatesPreview(
+fun ConversationScreenStatesPreview(
     @PreviewParameter(ConversationUiStatePreviewProvider::class) state: ConversationUiState
 ) {
     PreviewScaffold {
