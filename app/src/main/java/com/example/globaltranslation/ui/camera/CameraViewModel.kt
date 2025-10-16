@@ -1,6 +1,7 @@
 package com.example.globaltranslation.ui.camera
 
-import android.graphics.Rect
+import android.graphics.Rect as AndroidRect
+import androidx.compose.ui.geometry.Rect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.globaltranslation.core.provider.CameraTranslationProvider
@@ -111,10 +112,10 @@ class CameraViewModel @Inject constructor(
                                 originalText = block.originalText,
                                 translatedText = block.translatedText,
                                 boundingBox = Rect(
-                                    block.boundingBox.left,
-                                    block.boundingBox.top,
-                                    block.boundingBox.right,
-                                    block.boundingBox.bottom
+                                    block.boundingBox.left.toFloat(),
+                                    block.boundingBox.top.toFloat(),
+                                    block.boundingBox.right.toFloat(),
+                                    block.boundingBox.bottom.toFloat()
                                 )
                             )
                         }

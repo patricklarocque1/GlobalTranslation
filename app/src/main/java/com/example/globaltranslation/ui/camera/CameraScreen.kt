@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -825,8 +826,8 @@ private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiSt
         CameraUiState(isFlashOn = true),
         CameraUiState(
             detectedTextBlocks = listOf(
-                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", android.graphics.Rect(0,0,10,10)),
-                DetectedTextBlock("WELCOME", "BIENVENIDO", android.graphics.Rect(0,0,10,10))
+                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", Rect(0f, 0f, 10f, 10f)),
+                DetectedTextBlock("WELCOME", "BIENVENIDO", Rect(0f, 0f, 10f, 10f))
             ),
             isFrozen = true
         ),
@@ -880,8 +881,8 @@ fun CameraOverlayLivePreview() {
             isProcessing = false,
             error = null,
             detectedTextBlocks = listOf(
-                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", android.graphics.Rect(0, 0, 100, 40)),
-                DetectedTextBlock("WELCOME", "BIENVENIDO", android.graphics.Rect(0, 50, 120, 90))
+                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", Rect(0f, 0f, 100f, 40f)),
+                DetectedTextBlock("WELCOME", "BIENVENIDO", Rect(0f, 50f, 120f, 90f))
             )
         )
     }
@@ -920,12 +921,12 @@ fun CameraOverlayUiCheckPreview() {
             DetectedTextBlock(
                 originalText = "THIS IS AN EXTREMELY LONG BLOCK OF ORIGINAL TEXT INTENDED TO STRESS WRAPPING, SPACING, AND SCROLLING IN THE DOCUMENT VIEW.",
                 translatedText = "ESTE ES UN BLOQUE EXTREMADAMENTE LARGO DE TEXTO ORIGINAL DESTINADO A PROBAR EL AJUSTE DE LÍNEA, ESPACIADO Y DESPLAZAMIENTO.",
-                boundingBox = android.graphics.Rect(0, 0, 200, 100)
+                boundingBox = Rect(0f, 0f, 200f, 100f)
             ),
             DetectedTextBlock(
                 originalText = "SECOND LONG PARAGRAPH WITH MORE CONTENT TO SEE HOW MULTIPLE ITEMS ARE MERGED AND DISPLAYED IN THE PREVIEW.",
                 translatedText = "SEGUNDO PÁRRAFO LARGO CON MÁS CONTENIDO PARA VER CÓMO SE COMBINAN Y MUESTRAN VARIOS ELEMENTOS EN LA VISTA.",
-                boundingBox = android.graphics.Rect(0, 110, 200, 200)
+                boundingBox = Rect(0f, 110f, 200f, 200f)
             )
         )
     )
