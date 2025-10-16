@@ -567,20 +567,21 @@ private fun CameraLanguagePickerDialog(
         derivedStateOf { selectedSource == selectedTarget }
     }
     
+    // Use string literals for preview compatibility (ML Kit constants are "en", "es", etc.)
     val languages = remember {
         mapOf(
-            com.google.mlkit.nl.translate.TranslateLanguage.ENGLISH to "English",
-            com.google.mlkit.nl.translate.TranslateLanguage.SPANISH to "Spanish",
-            com.google.mlkit.nl.translate.TranslateLanguage.FRENCH to "French",
-            com.google.mlkit.nl.translate.TranslateLanguage.GERMAN to "German",
-            com.google.mlkit.nl.translate.TranslateLanguage.ITALIAN to "Italian",
-            com.google.mlkit.nl.translate.TranslateLanguage.PORTUGUESE to "Portuguese",
-            com.google.mlkit.nl.translate.TranslateLanguage.CHINESE to "Chinese",
-            com.google.mlkit.nl.translate.TranslateLanguage.JAPANESE to "Japanese",
-            com.google.mlkit.nl.translate.TranslateLanguage.KOREAN to "Korean",
-            com.google.mlkit.nl.translate.TranslateLanguage.RUSSIAN to "Russian",
-            com.google.mlkit.nl.translate.TranslateLanguage.ARABIC to "Arabic",
-            com.google.mlkit.nl.translate.TranslateLanguage.HINDI to "Hindi"
+            "en" to "English",
+            "es" to "Spanish",
+            "fr" to "French",
+            "de" to "German",
+            "it" to "Italian",
+            "pt" to "Portuguese",
+            "zh" to "Chinese",
+            "ja" to "Japanese",
+            "ko" to "Korean",
+            "ru" to "Russian",
+            "ar" to "Arabic",
+            "hi" to "Hindi"
         )
     }
     val languageEntries = remember(languages) { languages.entries.toList() }
@@ -867,10 +868,11 @@ fun CameraOverlayLivePreview() {
     val state = remember { mutableStateOf(CameraUiState()) }
 
     fun cycleLanguages() {
+        // Use string literals instead of ML Kit constants for preview compatibility
         val next = when (state.value.targetLanguageCode) {
-            com.google.mlkit.nl.translate.TranslateLanguage.SPANISH -> com.google.mlkit.nl.translate.TranslateLanguage.FRENCH
-            com.google.mlkit.nl.translate.TranslateLanguage.FRENCH -> com.google.mlkit.nl.translate.TranslateLanguage.GERMAN
-            else -> com.google.mlkit.nl.translate.TranslateLanguage.SPANISH
+            "es" -> "fr"  // Spanish -> French
+            "fr" -> "de"  // French -> German
+            else -> "es"  // Default to Spanish
         }
         state.value = state.value.copy(targetLanguageCode = next)
     }
@@ -946,21 +948,22 @@ fun CameraOverlayUiCheckPreview() {
 
 /**
  * Helper function to get language display name.
+ * Uses string literals for preview compatibility (ML Kit constants are "en", "es", etc.)
  */
 private fun getLanguageName(languageCode: String): String {
     return when (languageCode) {
-        com.google.mlkit.nl.translate.TranslateLanguage.ENGLISH -> "English"
-        com.google.mlkit.nl.translate.TranslateLanguage.SPANISH -> "Spanish"
-        com.google.mlkit.nl.translate.TranslateLanguage.FRENCH -> "French"
-        com.google.mlkit.nl.translate.TranslateLanguage.GERMAN -> "German"
-        com.google.mlkit.nl.translate.TranslateLanguage.ITALIAN -> "Italian"
-        com.google.mlkit.nl.translate.TranslateLanguage.PORTUGUESE -> "Portuguese"
-        com.google.mlkit.nl.translate.TranslateLanguage.CHINESE -> "Chinese"
-        com.google.mlkit.nl.translate.TranslateLanguage.JAPANESE -> "Japanese"
-        com.google.mlkit.nl.translate.TranslateLanguage.KOREAN -> "Korean"
-        com.google.mlkit.nl.translate.TranslateLanguage.RUSSIAN -> "Russian"
-        com.google.mlkit.nl.translate.TranslateLanguage.ARABIC -> "Arabic"
-        com.google.mlkit.nl.translate.TranslateLanguage.HINDI -> "Hindi"
+        "en" -> "English"
+        "es" -> "Spanish"
+        "fr" -> "French"
+        "de" -> "German"
+        "it" -> "Italian"
+        "pt" -> "Portuguese"
+        "zh" -> "Chinese"
+        "ja" -> "Japanese"
+        "ko" -> "Korean"
+        "ru" -> "Russian"
+        "ar" -> "Arabic"
+        "hi" -> "Hindi"
         else -> languageCode
     }
 }

@@ -182,10 +182,11 @@ class CameraViewModel @Inject constructor(
 
 /**
  * UI state for camera translation screen.
+ * Uses string literals for defaults to support Compose previews.
  */
 data class CameraUiState(
-    val sourceLanguageCode: String = TranslateLanguage.ENGLISH,
-    val targetLanguageCode: String = TranslateLanguage.SPANISH,
+    val sourceLanguageCode: String = "en",  // TranslateLanguage.ENGLISH
+    val targetLanguageCode: String = "es",  // TranslateLanguage.SPANISH
     val detectedTextBlocks: List<DetectedTextBlock> = emptyList(),
     val isProcessing: Boolean = false,
     val isFrozen: Boolean = false,
@@ -197,8 +198,8 @@ data class CameraUiState(
      * ML Kit only supports translation pairs with English.
      */
     fun isValidLanguagePair(): Boolean {
-        return sourceLanguageCode == TranslateLanguage.ENGLISH || 
-               targetLanguageCode == TranslateLanguage.ENGLISH
+        return sourceLanguageCode == "en" ||  // TranslateLanguage.ENGLISH 
+               targetLanguageCode == "en"
     }
 }
 
