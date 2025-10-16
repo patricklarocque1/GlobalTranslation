@@ -1,6 +1,7 @@
 package com.example.globaltranslation.ui.camera
 
-import android.graphics.Rect
+import android.graphics.Rect as AndroidRect
+import androidx.compose.ui.geometry.Rect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.globaltranslation.core.provider.CameraTranslationProvider
@@ -111,10 +112,10 @@ class CameraViewModel @Inject constructor(
                                 originalText = block.originalText,
                                 translatedText = block.translatedText,
                                 boundingBox = Rect(
-                                    block.boundingBox.left,
-                                    block.boundingBox.top,
-                                    block.boundingBox.right,
-                                    block.boundingBox.bottom
+                                    block.boundingBox.left.toFloat(),
+                                    block.boundingBox.top.toFloat(),
+                                    block.boundingBox.right.toFloat(),
+                                    block.boundingBox.bottom.toFloat()
                                 )
                             )
                         }
@@ -181,10 +182,11 @@ class CameraViewModel @Inject constructor(
 
 /**
  * UI state for camera translation screen.
+ * Uses string literals for defaults to support Compose previews.
  */
 data class CameraUiState(
-    val sourceLanguageCode: String = TranslateLanguage.ENGLISH,
-    val targetLanguageCode: String = TranslateLanguage.SPANISH,
+    val sourceLanguageCode: String = "en",  // TranslateLanguage.ENGLISH
+    val targetLanguageCode: String = "es",  // TranslateLanguage.SPANISH
     val detectedTextBlocks: List<DetectedTextBlock> = emptyList(),
     val isProcessing: Boolean = false,
     val isFrozen: Boolean = false,
@@ -196,8 +198,8 @@ data class CameraUiState(
      * ML Kit only supports translation pairs with English.
      */
     fun isValidLanguagePair(): Boolean {
-        return sourceLanguageCode == TranslateLanguage.ENGLISH || 
-               targetLanguageCode == TranslateLanguage.ENGLISH
+        return sourceLanguageCode == "en" ||  // TranslateLanguage.ENGLISH 
+               targetLanguageCode == "en"
     }
 }
 

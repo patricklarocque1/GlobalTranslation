@@ -1,11 +1,22 @@
 package com.example.globaltranslation.ui.conversation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -17,20 +28,46 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -41,8 +78,66 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.globaltranslation.R
 import com.example.globaltranslation.model.ConversationTurn
 import com.example.globaltranslation.ui.components.LanguagePickerButton
+import com.example.globaltranslation.ui.components.TwoLanguagePickerButton
 import com.example.globaltranslation.ui.theme.GlobalTranslationTheme
-import com.google.mlkit.nl.translate.TranslateLanguage
+import com.example.globaltranslation.ui.components.MultiDevicePreview
+import com.example.globaltranslation.ui.components.previewConversations
+import com.example.globaltranslation.ui.components.previewLanguages
+import com.example.globaltranslation.ui.components.DesignVariantPreview
+import com.example.globaltranslation.ui.components.PreviewScaffold
+import com.example.globaltranslation.ui.components.UiCheckPreview
+import com.google.mlkit.nl.translate.TranslateLanguage as MlKitTranslateLanguage
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FilterChip
+
+// --- Live interactive preview ---
+@MultiDevicePreview
+@DesignVariantPreview
+@Composable
+fun ConversationScreenLivePreview() {
+    val state = remember {
+        mutableStateOf(
+            ConversationUiState(
+                conversationHistory = previewConversations,
+                sourceLanguage = previewLanguages[0],
+                targetLanguage = previewLanguages[1],
+                autoPlayTranslation = true
+            )
+        )
+    }
+    PreviewScaffold {
+        ConversationScreenContent(
+                uiState = state.value,
+                hasAudioPermission = true,
+                onRequestAudioPermission = {},
+                onRefresh = {},
+                onSpeakText = { _, _ -> },
+                onDeleteSaved = {},
+                onHideSaved = {},
+                onSourceLanguageChange = { code -> state.value = state.value.copy(sourceLanguage = code) },
+                onTargetLanguageChange = { code -> state.value = state.value.copy(targetLanguage = code) },
+                onSwapLanguages = {
+                    state.value = state.value.copy(
+                        sourceLanguage = state.value.targetLanguage,
+                        targetLanguage = state.value.sourceLanguage
+                    )
+                },
+                onAutoPlayToggle = {
+                    state.value = state.value.copy(autoPlayTranslation = !state.value.autoPlayTranslation)
+                },
+                onStartListening = {},
+                onStopListening = {},
+                onClearConversation = {
+                    state.value = state.value.copy(conversationHistory = emptyList())
+                },
+                modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+// (imports block removed - now only at top)
 
 /**
  * Main conversation screen for live translation.
@@ -86,10 +181,47 @@ fun ConversationScreen(
         }
     }
     
-    // Pull to refresh setup
+    ConversationScreenContent(
+        uiState = uiState,
+        hasAudioPermission = hasAudioPermission,
+        onRequestAudioPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+        onRefresh = viewModel::refreshConversationHistory,
+        onSpeakText = viewModel::speakText,
+        onDeleteSaved = viewModel::deleteSavedConversation,
+        onHideSaved = viewModel::hideSavedHistory,
+        onSourceLanguageChange = viewModel::setSourceLanguage,
+        onTargetLanguageChange = viewModel::setTargetLanguage,
+        onSwapLanguages = viewModel::swapLanguages,
+        onAutoPlayToggle = viewModel::toggleAutoPlay,
+        onStartListening = { viewModel.startListening(uiState.sourceLanguage) },
+        onStopListening = viewModel::stopListening,
+        onClearConversation = viewModel::clearConversation,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.material.ExperimentalMaterialApi::class)
+@Composable
+private fun ConversationScreenContent(
+    uiState: ConversationUiState,
+    hasAudioPermission: Boolean,
+    onRequestAudioPermission: () -> Unit,
+    onRefresh: () -> Unit,
+    onSpeakText: (String, String) -> Unit,
+    onDeleteSaved: (Long) -> Unit,
+    onHideSaved: () -> Unit,
+    onSourceLanguageChange: (String) -> Unit,
+    onTargetLanguageChange: (String) -> Unit,
+    onSwapLanguages: () -> Unit,
+    onAutoPlayToggle: () -> Unit,
+    onStartListening: () -> Unit,
+    onStopListening: () -> Unit,
+    onClearConversation: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isRefreshing,
-        onRefresh = viewModel::refreshConversationHistory
+        onRefresh = onRefresh
     )
 
     Box(
@@ -100,13 +232,13 @@ fun ConversationScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Show saved history when refreshing or when toggled
+            // Saved history
             if ((uiState.showSavedHistory || uiState.isRefreshing) && uiState.savedHistory.isNotEmpty()) {
                 SavedHistorySection(
                     savedHistory = uiState.savedHistory,
-                    onSpeakText = viewModel::speakText,
-                    onDelete = viewModel::deleteSavedConversation,
-                    onHide = viewModel::hideSavedHistory,
+                    onSpeakText = onSpeakText,
+                    onDelete = onDeleteSaved,
+                    onHide = onHideSaved,
                     isRefreshing = uiState.isRefreshing,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -115,8 +247,8 @@ fun ConversationScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            
-            // Show pull hint when history is available but not shown
+
+            // Pull hint
             if (!uiState.showSavedHistory && !uiState.isRefreshing && uiState.savedHistory.isNotEmpty()) {
                 Card(
                     modifier = Modifier
@@ -149,78 +281,74 @@ fun ConversationScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
-        
-        // Warning banner for invalid language pair
-        if (!uiState.isValidLanguagePair) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+
+            // Warning banner
+            if (!uiState.isValidLanguagePair) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = "Warning",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(
-                        text = "ML Kit requires English as source or target language",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = "Warning",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = "ML Kit requires English as source or target language",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
-        }
-        
-        // Language selection and controls
-        LanguageSelectionRow(
-            sourceLanguage = uiState.sourceLanguage,
-            targetLanguage = uiState.targetLanguage,
-            onSourceLanguageChange = viewModel::setSourceLanguage,
-            onTargetLanguageChange = viewModel::setTargetLanguage,
-            onSwapLanguages = viewModel::swapLanguages,
-            autoPlayEnabled = uiState.autoPlayTranslation,
-            onAutoPlayToggle = viewModel::toggleAutoPlay,
-            modifier = Modifier.padding(16.dp)
-        )
-        
-        // Conversation history
-        ConversationHistory(
-            conversationHistory = uiState.conversationHistory,
-            onSpeakText = viewModel::speakText,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        )
-        
-        // Speech input area
-        SpeechInputArea(
-            isListening = uiState.isListening,
-            isListeningReady = uiState.isListeningReady,
-            isDetectingSpeech = uiState.isDetectingSpeech,
-            partialText = uiState.partialSpeechText,
-            isTranslating = uiState.isTranslating,
-            hasPermission = hasAudioPermission,
-            isValidLanguagePair = uiState.isValidLanguagePair,
-            onStartListening = { 
-                if (hasAudioPermission) {
-                    viewModel.startListening(uiState.sourceLanguage)
-                } else {
-                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                }
-            },
-            onStopListening = viewModel::stopListening,
-            onClearHistory = viewModel::clearConversation,
-            modifier = Modifier.padding(16.dp)
-        )
-        
+
+            // Language selection and controls
+            LanguageSelectionRow(
+                sourceLanguage = uiState.sourceLanguage,
+                targetLanguage = uiState.targetLanguage,
+                onSourceLanguageChange = onSourceLanguageChange,
+                onTargetLanguageChange = onTargetLanguageChange,
+                onSwapLanguages = onSwapLanguages,
+                autoPlayEnabled = uiState.autoPlayTranslation,
+                onAutoPlayToggle = onAutoPlayToggle,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            // Conversation history
+            ConversationHistory(
+                conversationHistory = uiState.conversationHistory,
+                onSpeakText = onSpeakText,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            )
+
+            // Speech input area
+            SpeechInputArea(
+                isListening = uiState.isListening,
+                isListeningReady = uiState.isListeningReady,
+                isDetectingSpeech = uiState.isDetectingSpeech,
+                partialText = uiState.partialSpeechText,
+                isTranslating = uiState.isTranslating,
+                hasPermission = hasAudioPermission,
+                isValidLanguagePair = uiState.isValidLanguagePair,
+                onStartListening = {
+                    if (hasAudioPermission) onStartListening() else onRequestAudioPermission()
+                },
+                onStopListening = onStopListening,
+                onClearHistory = onClearConversation,
+                modifier = Modifier.padding(16.dp)
+            )
+
             // Error display
             uiState.error?.let { error ->
                 Card(
@@ -240,7 +368,7 @@ fun ConversationScreen(
                 }
             }
         }
-        
+
         // Pull refresh indicator
         PullRefreshIndicator(
             refreshing = uiState.isRefreshing,
@@ -250,6 +378,117 @@ fun ConversationScreen(
                 .zIndex(1f),
             backgroundColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+// ---- Preview support ----
+
+private class ConversationUiStatePreviewProvider : PreviewParameterProvider<ConversationUiState> {
+    override val values: Sequence<ConversationUiState> = sequenceOf(
+        ConversationUiState(),
+        ConversationUiState(
+            conversationHistory = listOf(
+                ConversationTurn("Hello", "Hola", MlKitTranslateLanguage.ENGLISH, MlKitTranslateLanguage.SPANISH),
+                ConversationTurn("How are you?", "¿Cómo estás?", MlKitTranslateLanguage.ENGLISH, MlKitTranslateLanguage.SPANISH)
+            ),
+            autoPlayTranslation = true
+        ),
+        ConversationUiState(
+            sourceLanguage = MlKitTranslateLanguage.FRENCH,
+            targetLanguage = MlKitTranslateLanguage.GERMAN
+        ),
+        ConversationUiState(
+            isListening = true,
+            isListeningReady = true,
+            partialSpeechText = "Bonjour tout le monde",
+            sourceLanguage = MlKitTranslateLanguage.FRENCH,
+            targetLanguage = MlKitTranslateLanguage.ENGLISH
+        ),
+        ConversationUiState(
+            savedHistory = listOf(
+                ConversationTurn("Thanks", "Gracias", MlKitTranslateLanguage.ENGLISH, MlKitTranslateLanguage.SPANISH)
+            ),
+            showSavedHistory = true
+        )
+    )
+}
+
+// UI-check preview with extreme font scale/RTL and stress states
+@UiCheckPreview
+@Composable
+fun ConversationScreenUiCheckPreview() {
+    val longText = "THIS IS A VERY LONG PREVIEW TEXT TO STRESS WRAPPING, ACCESSIBILITY, AND LAYOUT BEHAVIOR IN THE CONVERSATION SCREEN PREVIEW. " +
+            "IT SHOULD ENSURE NO CLIPPING OCCURS AND TOUCH TARGETS REMAIN 48DP+ WHERE REQUIRED."
+    val state = ConversationUiState(
+        conversationHistory = listOf(
+            ConversationTurn(
+                originalText = longText,
+                translatedText = "ESTE ES UN TEXTO MUY LARGO PARA PROBAR EL AJUSTE Y LA ACCESIBILIDAD.",
+                sourceLang = MlKitTranslateLanguage.ENGLISH,
+                targetLang = MlKitTranslateLanguage.SPANISH
+            )
+        ),
+        // Choose a non-English pair to trigger invalid pair banner
+        sourceLanguage = MlKitTranslateLanguage.FRENCH,
+        targetLanguage = MlKitTranslateLanguage.GERMAN,
+        isListening = false,
+        isListeningReady = false,
+        isDetectingSpeech = false,
+        partialSpeechText = longText,
+        isTranslating = false,
+        isRefreshing = false,
+        savedHistory = listOf(
+            ConversationTurn("Thanks", "Gracias", MlKitTranslateLanguage.ENGLISH, MlKitTranslateLanguage.SPANISH)
+        ),
+        showSavedHistory = true
+    )
+    PreviewScaffold {
+        ConversationScreenContent(
+            uiState = state,
+            hasAudioPermission = false, // Force permission warning state
+            onRequestAudioPermission = {},
+            onRefresh = {},
+            onSpeakText = { _, _ -> },
+            onDeleteSaved = {},
+            onHideSaved = {},
+            onSourceLanguageChange = {},
+            onTargetLanguageChange = {},
+            onSwapLanguages = {},
+            onAutoPlayToggle = {},
+            onStartListening = {},
+            onStopListening = {},
+            onClearConversation = {},
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Preview(name = "Conversation States", showBackground = true)
+@PreviewScreenSizes
+@MultiDevicePreview
+@DesignVariantPreview
+@Composable
+fun ConversationScreenStatesPreview(
+    @PreviewParameter(ConversationUiStatePreviewProvider::class) state: ConversationUiState
+) {
+    PreviewScaffold {
+        ConversationScreenContent(
+                uiState = state,
+                hasAudioPermission = true,
+                onRequestAudioPermission = {},
+                onRefresh = {},
+                onSpeakText = { _, _ -> },
+                onDeleteSaved = {},
+                onHideSaved = {},
+                onSourceLanguageChange = {},
+                onTargetLanguageChange = {},
+                onSwapLanguages = {},
+                onAutoPlayToggle = {},
+                onStartListening = {},
+                onStopListening = {},
+                onClearConversation = {},
+                modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -265,44 +504,33 @@ private fun LanguageSelectionRow(
     onAutoPlayToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var sameWarning by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            // Source language
-            LanguagePickerButton(
-                selectedLanguageCode = sourceLanguage,
-                onLanguageSelected = { language ->
-                    onSourceLanguageChange(language)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+            TwoLanguagePickerButton(
+                sourceLanguageCode = sourceLanguage,
+                targetLanguageCode = targetLanguage,
+                onLanguagesSelected = { from: String, to: String ->
+                    sameWarning = from == to
+                    if (!sameWarning) {
+                        onSourceLanguageChange(from)
+                        onTargetLanguageChange(to)
+                    }
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .testTag("conversation_source_language")
-            )
-            
-            // Swap button
-            IconButton(onClick = onSwapLanguages) {
-                Icon(
-                    Icons.Default.SwapHoriz,
-                    contentDescription = "Swap languages"
-                )
-            }
-            
-            // Target language
-            LanguagePickerButton(
-                selectedLanguageCode = targetLanguage,
-                onLanguageSelected = { language ->
-                    onTargetLanguageChange(language)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("conversation_target_language")
+                    .testTag("conversation_languages")
             )
             
             // Auto-play toggle
@@ -312,6 +540,26 @@ private fun LanguageSelectionRow(
                     contentDescription = if (autoPlayEnabled) "Auto-play enabled" else "Auto-play disabled",
                     tint = if (autoPlayEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            }
+            if (sameWarning) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "From and To can't be the same.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
@@ -761,18 +1009,18 @@ private fun SavedHistoryItem(
 // Helper function to convert language codes to display names
 private fun getLanguageDisplayName(languageCode: String): String {
     return when (languageCode) {
-        TranslateLanguage.ENGLISH -> "English"
-        TranslateLanguage.SPANISH -> "Spanish"
-        TranslateLanguage.FRENCH -> "French"
-        TranslateLanguage.GERMAN -> "German"
-        TranslateLanguage.ITALIAN -> "Italian"
-        TranslateLanguage.PORTUGUESE -> "Portuguese"
-        TranslateLanguage.CHINESE -> "Chinese"
-        TranslateLanguage.JAPANESE -> "Japanese"
-        TranslateLanguage.KOREAN -> "Korean"
-        TranslateLanguage.RUSSIAN -> "Russian"
-        TranslateLanguage.ARABIC -> "Arabic"
-        TranslateLanguage.HINDI -> "Hindi"
+        MlKitTranslateLanguage.ENGLISH -> "English"
+        MlKitTranslateLanguage.SPANISH -> "Spanish"
+        MlKitTranslateLanguage.FRENCH -> "French"
+        MlKitTranslateLanguage.GERMAN -> "German"
+        MlKitTranslateLanguage.ITALIAN -> "Italian"
+        MlKitTranslateLanguage.PORTUGUESE -> "Portuguese"
+        MlKitTranslateLanguage.CHINESE -> "Chinese"
+        MlKitTranslateLanguage.JAPANESE -> "Japanese"
+        MlKitTranslateLanguage.KOREAN -> "Korean"
+        MlKitTranslateLanguage.RUSSIAN -> "Russian"
+        MlKitTranslateLanguage.ARABIC -> "Arabic"
+        MlKitTranslateLanguage.HINDI -> "Hindi"
         else -> languageCode.uppercase()
     }
 }

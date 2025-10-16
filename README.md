@@ -64,7 +64,7 @@ This app supports Android devices with **16KB memory pages** (ARM64):
 - **Kotlin**: 2.2.20 (latest stable)
 - **KSP**: 2.2.20-2.0.2 (matching Kotlin version)
 - **Hilt**: 2.57.2
-- **JVM Target**: 11 (Java & Kotlin aligned)
+- **JVM Target**: 21 (Java & Kotlin aligned - LTS version)
 
 ### Stable Build Configuration
 
@@ -82,12 +82,12 @@ plugins {
 
 // JVM target aligned between Java and Kotlin
 compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
@@ -230,14 +230,17 @@ The app uses a clean provider pattern with interfaces in :core and implementatio
   - Uses `ConversationViewModel` with providers from :data
   - Real-time speech recognition feedback
   - Auto-play translation support
+  - **Pull-to-refresh** to view saved conversation history from Room database
+  - **Saved history management** with delete functionality
   - Conversation history persisted to Room database
   
 - **TextInputScreen**: Manual text translation with full features ✅
   - Uses `TextInputViewModel` with providers from :data
   - Translation history with timestamps
-  - Copy to clipboard and copy to input functionality
+  - **Copy to clipboard** and **copy to input** functionality
   - Text-to-speech for both original and translated text
   - Speak button integration matching conversation screen
+  - Clear history and clear input buttons
 
 - **CameraScreen**: Real-time camera translation with OCR ✅
   - Uses `CameraViewModel` with CameraTranslationProvider from :data
@@ -250,9 +253,13 @@ The app uses a clean provider pattern with interfaces in :core and implementatio
   
 - **LanguageScreen**: ML Kit model management ✅
   - Uses `LanguageViewModel` with TranslationProvider from :data
+  - **Material 3 HorizontalCenteredHeroCarousel** showcasing popular language pairs
+  - **Real-time network status indicator** (WiFi/Cellular/Offline)
+  - **WiFi-only download toggle** in settings card
   - Dynamic download status checking
   - Download models for offline translation
   - Delete models to free storage space
+  - Cancel in-progress downloads
   - 20+ supported languages
 
 **Migration Complete**: All ViewModels now use :data providers instead of legacy :app services
@@ -359,12 +366,12 @@ ksp = "2.2.20-2.0.2"  # Not 1.0.20!
 ```kotlin
 // In app/build.gradle.kts
 compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 ```

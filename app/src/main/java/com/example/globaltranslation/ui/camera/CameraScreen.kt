@@ -4,18 +4,28 @@ import android.Manifest
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
+import androidx.camera.core.Preview as CameraXPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,8 +34,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.example.globaltranslation.ui.components.MultiDevicePreview
+import com.example.globaltranslation.ui.components.DesignVariantPreview
+import com.example.globaltranslation.ui.components.PreviewScaffold
+import com.example.globaltranslation.ui.components.UiCheckPreview
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -77,7 +96,6 @@ fun CameraScreen(
                 // Overlay UI
                 var showLanguagePicker by remember { mutableStateOf(false) }
                 
-                val context = LocalContext.current
                 val executor = remember { Executors.newSingleThreadExecutor() }
                 
                 DisposableEffect(Unit) {
@@ -173,7 +191,7 @@ private fun CameraPreview(
             cameraProvider = cameraProviderFuture.get()
             
             // Preview use case
-            val preview = Preview.Builder().build().also {
+            val preview = CameraXPreview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
             
@@ -233,6 +251,25 @@ private fun CameraOverlay(
     onCaptureClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    CameraOverlayContent(
+        uiState = uiState,
+        onFlashToggle = onFlashToggle,
+        onLanguagePickerClick = onLanguagePickerClick,
+        onClearResults = onClearResults,
+        onCaptureClick = onCaptureClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun CameraOverlayContent(
+    uiState: CameraUiState,
+    onFlashToggle: () -> Unit,
+    onLanguagePickerClick: () -> Unit,
+    onClearResults: () -> Unit,
+    onCaptureClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
@@ -256,18 +293,35 @@ private fun CameraOverlay(
                 )
             }
             
-            // Language selector - Shows source -> target
-            val languageLabel = "${getLanguageName(uiState.sourceLanguageCode)} -> ${getLanguageName(uiState.targetLanguageCode)}"
-            FilterChip(
-                selected = false,
+            // Language selector - Shows source -> target with improved styling
+            val languageLabel = "${getLanguageName(uiState.sourceLanguageCode)} → ${getLanguageName(uiState.targetLanguageCode)}"
+            Surface(
                 onClick = onLanguagePickerClick,
-                label = { 
-                    Text(languageLabel)
-                },
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 3.dp,
                 modifier = Modifier
                     .testTag("camera_language_chip")
                     .semantics { contentDescription = "Select languages ($languageLabel)" }
-            )
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = languageLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
         }
         
         // Document-style translation display (merged content)
@@ -509,100 +563,178 @@ private fun CameraLanguagePickerDialog(
 ) {
     var selectedSource by remember { mutableStateOf(currentSourceLanguage) }
     var selectedTarget by remember { mutableStateOf(currentTargetLanguage) }
+    val isSameLanguageSelected by remember {
+        derivedStateOf { selectedSource == selectedTarget }
+    }
     
-    val languages = mapOf(
-        com.google.mlkit.nl.translate.TranslateLanguage.ENGLISH to "English",
-        com.google.mlkit.nl.translate.TranslateLanguage.SPANISH to "Spanish",
-        com.google.mlkit.nl.translate.TranslateLanguage.FRENCH to "French",
-        com.google.mlkit.nl.translate.TranslateLanguage.GERMAN to "German",
-        com.google.mlkit.nl.translate.TranslateLanguage.ITALIAN to "Italian",
-        com.google.mlkit.nl.translate.TranslateLanguage.PORTUGUESE to "Portuguese",
-        com.google.mlkit.nl.translate.TranslateLanguage.CHINESE to "Chinese",
-        com.google.mlkit.nl.translate.TranslateLanguage.JAPANESE to "Japanese",
-        com.google.mlkit.nl.translate.TranslateLanguage.KOREAN to "Korean",
-        com.google.mlkit.nl.translate.TranslateLanguage.RUSSIAN to "Russian",
-        com.google.mlkit.nl.translate.TranslateLanguage.ARABIC to "Arabic",
-        com.google.mlkit.nl.translate.TranslateLanguage.HINDI to "Hindi"
-    )
+    // Use string literals for preview compatibility (ML Kit constants are "en", "es", etc.)
+    val languages = remember {
+        mapOf(
+            "en" to "English",
+            "es" to "Spanish",
+            "fr" to "French",
+            "de" to "German",
+            "it" to "Italian",
+            "pt" to "Portuguese",
+            "zh" to "Chinese",
+            "ja" to "Japanese",
+            "ko" to "Korean",
+            "ru" to "Russian",
+            "ar" to "Arabic",
+            "hi" to "Hindi"
+        )
+    }
+    val languageEntries = remember(languages) { languages.entries.toList() }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.96f)
+                .fillMaxHeight(0.9f)
                 .padding(16.dp),
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
             ) {
-                Text(
-                    text = "Camera Translation Languages",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                // Header with close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select Languages",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            // Swap selected languages quickly
+                            val tmp = selectedSource
+                            selectedSource = selectedTarget
+                            selectedTarget = tmp
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = "Swap languages",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
                 
-                Text(
-                    text = "Translate from",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                 
-                // Source language selector
+                // Single smooth-scrolling list for both sections
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp)
                 ) {
-                    items(languages.entries.toList()) { (code, name) ->
-                        FilterChip(
-                            selected = code == selectedSource,
-                            onClick = { selectedSource = code },
-                            label = { Text(name) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
+                    item {
+                        Text(
+                            text = "From",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(languageEntries, key = { it.key }) { (code, name) ->
+                        LanguageSelectionCard(
+                            name = name,
+                            isSelected = code == selectedSource,
+                            onClick = { selectedSource = code }
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(12.dp)) }
+                    item {
+                        Text(
+                            text = "To",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(languageEntries, key = { it.key + "_target" }) { (code, name) ->
+                        LanguageSelectionCard(
+                            name = name,
+                            isSelected = code == selectedTarget,
+                            onClick = { selectedTarget = code }
                         )
                     }
                 }
                 
-                Text(
-                    text = "Translate to",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
-                )
-                
-                // Target language selector
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                ) {
-                    items(languages.entries.toList()) { (code, name) ->
-                        FilterChip(
-                            selected = code == selectedTarget,
-                            onClick = { selectedTarget = code },
-                            label = { Text(name) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
+                // Tiny warning when both selections are the same
+                if (isSameLanguageSelected) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "From and To can't be the same.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
-                
+
                 // Action buttons
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { onLanguagesSelected(selectedSource, selectedTarget) }
+                        onClick = { onLanguagesSelected(selectedSource, selectedTarget) },
+                        enabled = !isSameLanguageSelected,
+                        shape = MaterialTheme.shapes.large
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 4.dp)
+                        )
                         Text("Apply")
                     }
                 }
@@ -612,22 +744,226 @@ private fun CameraLanguagePickerDialog(
 }
 
 /**
+ * Modern language selection card with animation.
+ */
+@Composable
+private fun LanguageSelectionCard(
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.0f else 0.98f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "card_scale"
+    )
+    
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            }
+        ),
+        border = if (isSelected) {
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        } else null,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 1.dp
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+            )
+            
+            AnimatedVisibility(
+                visible = isSelected,
+                enter = scaleIn() + fadeIn(),
+                exit = scaleOut() + fadeOut()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+// ---- Preview support ----
+
+private class CameraUiStatePreviewProvider : PreviewParameterProvider<CameraUiState> {
+    override val values: Sequence<CameraUiState> = sequenceOf(
+        CameraUiState(),
+        CameraUiState(isFlashOn = true),
+        CameraUiState(
+            detectedTextBlocks = listOf(
+                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", Rect(0f, 0f, 10f, 10f)),
+                DetectedTextBlock("WELCOME", "BIENVENIDO", Rect(0f, 0f, 10f, 10f))
+            ),
+            isFrozen = true
+        ),
+        CameraUiState(error = "Models missing. Connect to WiFi to download.")
+    )
+}
+
+@Preview(name = "Camera Overlay States", showBackground = true)
+@PreviewScreenSizes
+@MultiDevicePreview
+@DesignVariantPreview
+@Composable
+fun CameraOverlayStatesPreview(
+    @PreviewParameter(CameraUiStatePreviewProvider::class) state: CameraUiState
+) {
+    PreviewScaffold {
+        // Using a simple placeholder background to mimic camera backdrop
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraOverlayContent(
+                uiState = state,
+                onFlashToggle = {},
+                onLanguagePickerClick = {},
+                onClearResults = {},
+                onCaptureClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// Live interactive overlay preview (no actual camera). Simulates flash, language change, capture, and clear.
+@Preview(name = "Camera Overlay Live", showBackground = true)
+@MultiDevicePreview
+@DesignVariantPreview
+@Composable
+fun CameraOverlayLivePreview() {
+    val state = remember { mutableStateOf(CameraUiState()) }
+
+    fun cycleLanguages() {
+        // Use string literals instead of ML Kit constants for preview compatibility
+        val next = when (state.value.targetLanguageCode) {
+            "es" -> "fr"  // Spanish -> French
+            "fr" -> "de"  // French -> German
+            else -> "es"  // Default to Spanish
+        }
+        state.value = state.value.copy(targetLanguageCode = next)
+    }
+
+    fun simulateCapture() {
+        state.value = state.value.copy(
+            isFrozen = true,
+            isProcessing = false,
+            error = null,
+            detectedTextBlocks = listOf(
+                DetectedTextBlock("HELLO WORLD", "HOLA MUNDO", Rect(0f, 0f, 100f, 40f)),
+                DetectedTextBlock("WELCOME", "BIENVENIDO", Rect(0f, 50f, 120f, 90f))
+            )
+        )
+    }
+
+    fun clear() {
+        state.value = state.value.copy(
+            detectedTextBlocks = emptyList(),
+            isFrozen = false,
+            isProcessing = false,
+            error = null
+        )
+    }
+
+    PreviewScaffold {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraOverlayContent(
+                uiState = state.value,
+                onFlashToggle = { state.value = state.value.copy(isFlashOn = !state.value.isFlashOn) },
+                onLanguagePickerClick = { cycleLanguages() },
+                onClearResults = { clear() },
+                onCaptureClick = { simulateCapture() },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// UI-check preview with extreme text lengths and frozen state
+@UiCheckPreview
+@Composable
+fun CameraOverlayUiCheckPreview() {
+    val state = CameraUiState(
+        isFlashOn = true,
+        isFrozen = true,
+        detectedTextBlocks = listOf(
+            DetectedTextBlock(
+                originalText = "THIS IS AN EXTREMELY LONG BLOCK OF ORIGINAL TEXT INTENDED TO STRESS WRAPPING, SPACING, AND SCROLLING IN THE DOCUMENT VIEW.",
+                translatedText = "ESTE ES UN BLOQUE EXTREMADAMENTE LARGO DE TEXTO ORIGINAL DESTINADO A PROBAR EL AJUSTE DE LÍNEA, ESPACIADO Y DESPLAZAMIENTO.",
+                boundingBox = Rect(0f, 0f, 200f, 100f)
+            ),
+            DetectedTextBlock(
+                originalText = "SECOND LONG PARAGRAPH WITH MORE CONTENT TO SEE HOW MULTIPLE ITEMS ARE MERGED AND DISPLAYED IN THE PREVIEW.",
+                translatedText = "SEGUNDO PÁRRAFO LARGO CON MÁS CONTENIDO PARA VER CÓMO SE COMBINAN Y MUESTRAN VARIOS ELEMENTOS EN LA VISTA.",
+                boundingBox = Rect(0f, 110f, 200f, 200f)
+            )
+        )
+    )
+    PreviewScaffold {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraOverlayContent(
+                uiState = state,
+                onFlashToggle = {},
+                onLanguagePickerClick = {},
+                onClearResults = {},
+                onCaptureClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+/**
  * Helper function to get language display name.
+ * Uses string literals for preview compatibility (ML Kit constants are "en", "es", etc.)
  */
 private fun getLanguageName(languageCode: String): String {
     return when (languageCode) {
-        com.google.mlkit.nl.translate.TranslateLanguage.ENGLISH -> "English"
-        com.google.mlkit.nl.translate.TranslateLanguage.SPANISH -> "Spanish"
-        com.google.mlkit.nl.translate.TranslateLanguage.FRENCH -> "French"
-        com.google.mlkit.nl.translate.TranslateLanguage.GERMAN -> "German"
-        com.google.mlkit.nl.translate.TranslateLanguage.ITALIAN -> "Italian"
-        com.google.mlkit.nl.translate.TranslateLanguage.PORTUGUESE -> "Portuguese"
-        com.google.mlkit.nl.translate.TranslateLanguage.CHINESE -> "Chinese"
-        com.google.mlkit.nl.translate.TranslateLanguage.JAPANESE -> "Japanese"
-        com.google.mlkit.nl.translate.TranslateLanguage.KOREAN -> "Korean"
-        com.google.mlkit.nl.translate.TranslateLanguage.RUSSIAN -> "Russian"
-        com.google.mlkit.nl.translate.TranslateLanguage.ARABIC -> "Arabic"
-        com.google.mlkit.nl.translate.TranslateLanguage.HINDI -> "Hindi"
+        "en" -> "English"
+        "es" -> "Spanish"
+        "fr" -> "French"
+        "de" -> "German"
+        "it" -> "Italian"
+        "pt" -> "Portuguese"
+        "zh" -> "Chinese"
+        "ja" -> "Japanese"
+        "ko" -> "Korean"
+        "ru" -> "Russian"
+        "ar" -> "Arabic"
+        "hi" -> "Hindi"
         else -> languageCode
     }
 }

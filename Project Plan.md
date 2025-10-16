@@ -76,8 +76,10 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Status:** Live voice translation fully functional
 - **Features:** Real-time speech-to-speech translation, conversation history
 - **UI Components:** Microphone input, language selection, auto-play controls
+- **Advanced Features:** Pull-to-refresh saved history, saved conversation deletion
 - **Permissions:** Runtime RECORD_AUDIO permission handling with visual feedback
 - **Data Model:** `ConversationTurn` with original/translated text pairs
+- **Room Integration:** Persistent conversation storage with pull-to-refresh access
 
 #### ✅ TextInputScreen.kt + ViewModel - IMPLEMENTED
 
@@ -96,10 +98,14 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 
 #### ✅ LanguageScreen.kt + ViewModel - IMPLEMENTED
 
-- **Status:** ML Kit model management interface complete
-- **Features:** Model download/delete, download progress tracking
-- **UI Components:** Supported languages list, download status indicators
-- **Integration:** Direct ML Kit model manager integration
+- **Status:** ML Kit model management interface complete with advanced UI
+- **Features:** Model download/delete, download progress tracking, cancel downloads
+- **UI Components:** 
+  - **Material 3 HorizontalCenteredHeroCarousel** for popular language pairs (NEW!)
+  - **Network status indicator** (WiFi/Cellular/Offline) (NEW!)
+  - **WiFi-only download toggle** in settings card (NEW!)
+  - Supported languages list with download status indicators
+- **Integration:** Direct ML Kit model manager integration with RemoteModelManager
 
 ### ✅ Reusable Components - IMPLEMENTED
 
@@ -120,7 +126,7 @@ The project successfully evolved from NavigationSuiteScaffold template to full t
 - **Hilt Version:** 2.57.2
 - **Dependencies:** All managed through `gradle/libs.versions.toml`
 - **Build Status:** All builds successful, app running on devices
-- **JVM Target:** 11 (aligned between Java and Kotlin)
+- **JVM Target:** 21 (aligned between Java and Kotlin - LTS version)
 - **16KB Page Size:** Full ARM64 support with Google Play compliance
 
 ### Architecture ✅ COMPLETE & VERIFIED
@@ -177,10 +183,10 @@ All planned features have been successfully implemented with:
    - **Solution**: Added `alias(libs.plugins.kotlin.android)` to plugins block
    - **Impact**: Enables proper Kotlin compilation and Hilt code generation
 
-3. **JVM Target Mismatch** ✅
-   - **Issue**: Java targeted JVM 11 but Kotlin defaulted to JVM 21
-   - **Solution**: Added `kotlinOptions { jvmTarget = "11" }` to align with Java
-   - **Impact**: Resolves compilation errors and ensures bytecode compatibility
+3. **JVM Target Upgrade** ✅
+   - **Resolution**: Upgraded all modules to target JVM 21 (LTS version)
+   - **Solution**: Aligned both Java and Kotlin to JVM 21 across :app, :data, and :core modules
+   - **Impact**: Access to modern Java features, improved performance and security, full AGP 8.13 support
 
 4. **UI Component Parameter Mismatches** ✅
    - **Issue**: `LanguagePickerButton` calls used wrong parameter names
